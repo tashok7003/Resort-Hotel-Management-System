@@ -1,0 +1,6 @@
+
+def default(request):
+    
+    return {
+
+    }
