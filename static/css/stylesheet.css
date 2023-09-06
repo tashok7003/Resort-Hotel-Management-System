@@ -22231,3 +22231,7 @@ select.selectpicker {
 .w-100{
     width: 100%;
 }
+
+.dashed{
+    border-bottom: 1px dashed gray;
+}

@@ -23,10 +23,12 @@ urlpatterns = [
 
     # Apps Routes
     path("", include("hotel.urls")),
+    path("booking/", include("booking.urls")),
     path("user/", include("userauths.urls")),
 
-    # Re-Captcha Validation
-    path('captcha/', include('captcha.urls')),
+    # Ckeditor
+    path("ckeditor5/", include('django_ckeditor_5.urls')),
+
 ]
 
 

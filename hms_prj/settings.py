@@ -42,8 +42,8 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
 
     # Custom Apps
-    'room',
     'hotel',
+    'booking',
     'addon',
     'userauths',
 
@@ -51,7 +51,6 @@ INSTALLED_APPS = [
     'import_export',
     'crispy_forms',
     'mathfilters',
-    'ckeditor',
     'ckeditor_uploader',
     'django_ckeditor_5',
     'taggit',
@@ -59,7 +58,6 @@ INSTALLED_APPS = [
     'paypal.standard.ipn',
     'geoip2',
     'django_user_agents',
-    'captcha',
     'storages',
     'channels',
 ]
@@ -195,21 +193,15 @@ JAZZMIN_SETTINGS = {
     # "order_with_respect_to": ["store", "store.Product"],
 
     "order_with_respect_to": [
-        "store",
-        "store.product",
-        "store.cartorder",
-        "store.cartorderitem",
-        "store.category",
-        "store.brand",
-        "store.productfaq",
-        "store.productoffers",
-        "store.productbidders",
-        "store.review",
-        "vendor",
+        "hotel",
+        "hotel.Hotel",
+        "hotel.Room",
+        "hotel.Booking",
+        "hotel.BookingDetail",
+        "hotel.Guest",
+        "hotel.RoomServices",
         "userauths"
         "addons",
-        "addons.Company",
-        "addons.BasicAddon"
     ],
     
     "icons": {
@@ -221,54 +213,12 @@ JAZZMIN_SETTINGS = {
         "userauths.User": "fas fa-user",
         "userauths.Profile":"fas fa-address-card",
 
-        "store.Product": "fas fa-th",
-        "store.CartOrder":"fas fa-shopping-cart",
-        "store.CartOrderItem":"fas fa-shopping-basket",
-        "store.Brand":"fas fa-check-circle",
-        "store.productfaq":"fas fa-question",
-        "store.productoffers":"fas fa-handshake",
-        "store.productbidders":"fas fa-poll",
-        "store.Review":"fas fa-star fa-beat",
-        "store.Category":"fas fa-tag",
-
-        "vendor.Vendor":"fas fa-store",
-        "vendor.Coupon":"fas fa-percentage",
-        "vendor.DeliveryCouriers":"fas fa-truck",
-        "vendor.Notification":"fas fa-bell",
-        "vendor.PayoutTracker":"fas fa-wallet",
-        "vendor.ChatMessage":"fas fa-envelope",
-
-        "addons.BecomeAVendor":"fas fa-user-plus",
-        "addons.AboutUS":"fas fa-users",
-        "addons.Company":"fas fa-university",
-        "addons.BasicAddon":"fas fa-cog",
-        
-        "addons.Policy":"fas fa-copyright",
-        "addons.ContactUs":"fas fa-phone",
-        "addons.AnnouncementsModal":"fas fa-microphone",
-        "addons.AnnouncementsTopbar":"fas fa-microphone",
-        "addons.ChangeLog":"fas fa-code",
-        "addons.PlatformNotifications":"fas fa-bell",
-        "addons.SupportContactInformation":"fas fa-headset",
-        "addons.TaxRate":"fas fa-percentage",
-        "addons.HomePageSetup":"fas fa-home",
-        "addons.FAQs":"fas fa-question",
-        "addons.PaymentMethod":"fas fa-credit-card",
-        "addons.PayoutMethod":"fas fa-credit-card",
-
-
-        "blog.Post":"fas fa-th",
-        "blog.Category":"fas fa-tag",
-        "blog.Comment":"fas fa-comments",
-
-        "core.Address":"fas fa-map-marker",
-        "core.BillingAddress":"fas fa-credit-card",
-        "core.CancelledOrder":"fas fa-ban",
-        "core.Wishlist":"fas fa-heart",
-
-        "analytics.NewsLetter":"fas fa-envelope",
-        "analytics.Customers":"fas fa-user",
-        "analytics.AnalyticsTrackingCode":"fas fa-code",
+        "hotel.Hotel": "fas fa-th",
+        "hotel.Booking":"fas fa-calendar-week",
+        "hotel.BookingDetail":"fas fa-calendar-alt",
+        "hotel.Guest":"fas fa-user",
+        "hotel.Room":"fas fa-bed",
+        "hotel.RoomServices":"fas fa-user-cog",
     },
 
 

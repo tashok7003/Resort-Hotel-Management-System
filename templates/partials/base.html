@@ -15,11 +15,16 @@
     <link rel="stylesheet" href="{% static 'css/stylesheet.css' %}">
     <link rel="stylesheet" href="{% static 'css/mmenu.css' %}">
     <link rel="stylesheet" href="{% static 'css/style.css' %}" id="colors">
+    <link href="{% static 'css/datedropper.css' %}" rel="stylesheet" type="text/css">
+
     <!-- Icons, Font and assets -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.css" />
-
-
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
+    <!-- <script src="https://cdn.jsdelivr.net/npm/jquery@3.5.1/dist/jquery.slim.min.js" integrity="sha384-DfXdz2htPH0lsSSs5nCTpuj/zy4C+OGpamoFVy38MVBnE+IbbVYUew+OrCXaRkfj" crossorigin="anonymous"></script> -->
+    <!-- <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-Fy6S3B9q64WdZWQUiU+q4/2Lc9npb8tCaSX9FK7E8HnRr0Jz8D6OP9dO5Vg3Q9ct" crossorigin="anonymous"></script> -->
+    <!-- <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/css/bootstrap.min.css" integrity="sha384-xOolHFLEh07PJGoPkLv1IbcEPTNtaed2xpHsD9ESMhqIYd0nLMwNLD69Npy4HI+N" crossorigin="anonymous">     -->
+    
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@mdi/font@7.2.96/css/materialdesignicons.min.css">
     <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/remixicon-ligatures@2.5.0/fonts/remixicon.min.css">
@@ -93,10 +98,11 @@
                         <div class="header_widget"> 
                             
                             {% if request.user.is_authenticated %}
-                                <a href="#dialog_signin_part" class="button border sign-in popup-with-zoom-anim"><i class="bi bi-grid"></i> Dashboard</a> 
+                                <a href="{% url 'hotel:selected_rooms' %}" class="button border sign-in "><i class="fas fa-shopping-cart"></i><span class="room-count">0</span></a> 
+                                <a href="#dialog_signin_part" class="button border sign-in "><i class="bi bi-grid"></i> Dashboard</a> 
                                 <a href="{% url 'userauths:sign-out' %}" class="button border with-icon"><i class="bi bi-power"></i> Sign Out</a>
                             {% else %}
-                                <a href="{% url 'userauths:sign-in' %}" class="button border sign-in popup-with-zoom-anim"><i class="fa fa-sign-in"></i> Sign In</a> 
+                                <a href="{% url 'userauths:sign-in' %}" class="button border sign-in "><i class="fa fa-sign-in"></i> Sign In</a> 
                                 <a href="{% url 'userauths:sign-up' %}" class="button border with-icon"><i class="bi bi-person-add"></i> Sign Up</a>
                             {% endif %}
                         </div>
@@ -256,7 +262,11 @@
         {% endfor %}
     </script>
 
+    <script src="http://maps.google.com/maps/api/js?sensor=false&amp;language=en"></script> 
+
+
     <!-- Scripts -->
+    <script src="{% static 'scripts/custom.js' %}"></script>
     <script src="{% static 'scripts/jquery-3.4.1.min.js' %}"></script>
     <script src="{% static 'scripts/chosen.min.js' %}"></script>
     <script src="{% static 'scripts/slick.min.js' %}"></script>
@@ -269,6 +279,17 @@
     <script src="{% static 'scripts/color_switcher.js' %}"></script>
     <script src="{% static 'scripts/jquery_custom.js' %}"></script>
     <script src="{% static 'scripts/typed.js' %}"></script>
+    <script src="{% static 'scripts/infobox.min.js' %}"></script> 
+    <script src="{% static 'scripts/markerclusterer.js' %}"></script> 
+    <script src="{% static 'scripts/maps.js' %}"></script>
+    <script src="{% static 'scripts/datedropper.js' %}"></script> 
+    <script src="{% static 'scripts/quantityButtons.js' %}"></script>
+    <script src="{% static 'scripts/moment.min.js' %}"></script>
+    <script src="{% static 'scripts/daterangepicker.js' %}"></script>
+    <script src="{% static 'scripts/moment.min.js' %}"></script>
+    <script src="{% static 'scripts/daterangepicker.js' %}"></script>
+    
+    
     
     <script>
         function initAutocomplete() {
@@ -290,10 +311,6 @@
             }
         }
     </script>
-    <!-- Date Range Picker - docs: http://www.daterangepicker.com/ -->
-    <script src="{% static 'scripts/moment.min.js' %}"></script>
-    <script src="{% static 'scripts/daterangepicker.js' %}"></script>
-
     <script>
         $(function() {
 
@@ -330,21 +347,6 @@
             $('#booking-date-search').val('');
         });
     </script>
-
-    <!-- Style Switcher -->
-    <div id="color_switcher_preview">
-        <h2>Choose Your Color <a href="#"><i class="fa fa-gear fa-spin (alias)"></i></a></h2>
-        <div>
-            <ul class="colors" id="color1">
-                <li><a href="#" class="stylesheet"></a></li>
-                <li><a href="#" class="stylesheet_1"></a></li>
-                <li><a href="#" class="stylesheet_2"></a></li>
-                <li><a href="#" class="stylesheet_3"></a></li>
-                <li><a href="#" class="stylesheet_4"></a></li>
-                <li><a href="#" class="stylesheet_5"></a></li>
-            </ul>
-        </div>
-    </div>
 </body>
 
 </html>
