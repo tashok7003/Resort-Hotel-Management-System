@@ -23,15 +23,59 @@
                             </h2>
                             <span> <a href="#utf_listing_location" class="listing-address"> <i class="fas fa-location-arrow"></i> {{hotel.address}}  </a> </span>
                             <span class="call_now"><i class="fas fa-phone"></i> {{hotel.mobile}} </span>
-                            <div class="utf_star_rating_section" data-rating="4.5">
-                                <div class="utf_counter_star_rating">(4.5) / (14 Reviews)</div>
+                            <div class="utf_star_rating_section" data-rating="{{hotel.average_rating}}">
+                                {% if hotel.average_rating == None %}
+                                    <div class="utf_counter_star_rating">No Reviews Yet</div>
+                                {% else %}
+                                    <div class="utf_counter_star_rating">({{hotel.average_rating}}) / ({{hotel.rating_count}} Reviews) </div>
+                                {% endif %}
+                                    
                             </div>
                             <ul class="listing_item_social">
-                                <li><a href="#"><i class="fa fa-bookmark"></i> Bookmark</a></li>
-                                <li><a href="#"><i class="fa fa-star"></i> Add Review</a></li>
-                                <li><a href="#"><i class="fa fa-flag"></i> Featured</a></li>
-                                <li><a href="#"><i class="fa fa-share"></i> Share</a></li>
-                                <li><a href="#" class="now_open">Open Now</a></li>
+                                
+                                {% if bookmark %}
+                                    <li><a style="cursor: pointer;" data-hotel="{{hotel.id}}" class="add-to-bookmark-{{hotel.id}}" id="add-to-bookmark"><i class="fa fa-heart" style="color: red;"></i></a></li>
+                                {% else %}
+                                    <li><a style="cursor: pointer;" data-hotel="{{hotel.id}}" class="add-to-bookmark-{{hotel.id}}" id="add-to-bookmark"><i class="fa fa-heart" style="color: gray;"></i></a></li>
+                                {% endif %}
+
+                                {% if request.user.is_authenticated %}
+                                
+                                    {% if not reviews %}
+                                        <a href="#small-dialog" class=" popup-with-zoom-anim" id="add-review-button"><i class="fa fa-star"> </i>Add Review</a></li>
+                                        <div id="small-dialog" class="zoom-anim-dialog mfp-hide">
+                                            <div class="small_dialog_header">
+                                            <h3 class="review_text">Write a review</h3>
+                                            </div>
+                                            <div class="utf_message_reply_block margin-top-0" id="review_div">
+                                            <textarea cols="40" rows="3" id="review-input" placeholder="Your Message..."></textarea>
+                                            <select name="" id="rating-input">
+                                                <option value="1">★☆☆☆☆</option>
+                                                <option value="2">★★☆☆☆</option>
+                                                <option value="3">★★★☆☆</option>
+                                                <option value="4">★★★★☆</option>
+                                                <option value="5">★★★★★</option>
+                                            </select>
+                                            <button data-hotel="{{hotel.id}}" class="button" id="review-btn">Reply Message</button>
+                                            </div>
+                                        </div>
+                                    {% endif %}
+                                {% else %}
+                                    <li><a href="{% url 'userauths:sign-in' %}?next={{request.path}}"><i class="fa fa-sign-in"></i> Login to Write Review</a></li>
+                                {% endif %}
+                                <li><a style="cursor: pointer;" id="clipboard"><i class="fa fa-share"></i> Share</a></li>
+                                <script>
+                                    var $temp = $("<input>");
+                                    var $url = $(location).attr('href');
+                                  
+                                    $('#clipboard').on('click', function() {
+                                      $("body").append($temp);
+                                      $temp.val($url).select();
+                                      document.execCommand("copy");
+                                      $temp.remove();
+                                      $("#clipboard").html("URL copied <i class='fas fa-check-circle'></i>");
+                                    })
+                                  </script>
                             </ul>
                         </div>
                     </div>
@@ -39,16 +83,16 @@
                         <h3 class="utf_listing_headline_part margin-top-30 margin-bottom-30">Description</h3>
                         <p>{{hotel.description|safe}} </p>
                         <div id="utf_listing_tags" class="utf_listing_section listing_tags_section margin-bottom-10 margin-top-0">
-                            <a href="#"><i class="sl sl-icon-phone" aria-hidden="true"></i> {{hotel.mobile}} </a>
+                            <a href="#"><i class="fas fa-phone" aria-hidden="true"></i> {{hotel.mobile}} </a>
                             <a href="#"><i class="fa fa-envelope-o" aria-hidden="true"></i> {{hotel.email}} </a>
                             <!-- <a href="#"><i class="sl sl-icon-globe" aria-hidden="true"></i> www.example.com</a> -->
                         </div>
                         <div class="social-contact">
-                            <a href="#" class="facebook-link"><i class="fa fa-facebook"></i> Facebook</a>
-                            <a href="#" class="twitter-link"><i class="fa fa-twitter"></i> Twitter</a>
-                            <a href="#" class="instagram-link"><i class="fa fa-instagram"></i> Instagram</a>
-                            <a href="#" class="linkedin-link"><i class="fa fa-linkedin"></i> Linkedin</a>
-                            <a href="#" class="youtube-link"><i class="fa fa-youtube-play"></i> Youtube</a>
+                            <a href="#" class="facebook-link"><i class="fab fa-facebook"></i> Facebook</a>
+                            <a href="#" class="twitter-link"><i class="fab fa-twitter"></i> Twitter</a>
+                            <a href="#" class="instagram-link"><i class="fab fa-instagram"></i> Instagram</a>
+                            <a href="#" class="linkedin-link"><i class="fab fa-linkedin"></i> Linkedin</a>
+                            <a href="#" class="youtube-link"><i class="fab fa-youtube-play"></i> Youtube</a>
                         </div>
                     </div>
 
@@ -76,7 +120,6 @@
                                                 <!-- <sub class="ppl-offer label-light-success">20% Off</sub> -->
                                             </h5>
                                             <p><strong>Beds :</strong> {{r.number_of_beds}} - <strong>Rooms:</strong> {{ r.rooms_count }}</p>
-                                            <p><strong><a href="{% url 'hotel:room_type_detail' hotel.slug r.slug %}" class="dashed">Check Available Rooms</a></p>
                                             <span>${{r.price}}</span>
                                         </li>
                                     {% endfor %}
@@ -125,211 +168,51 @@
                         </div>
                     </div>
 
-                    <div id="utf_listing_location" class="utf_listing_section">
-                        <h3 class="utf_listing_headline_part margin-top-60 margin-bottom-40">Location</h3>
-                        <div id="utf_single_listing_map_block">
-                            <div id="utf_single_listingmap" data-latitude="36.778259" data-longitude="-119.417931" data-map-icon="im im-icon-Hamburger"></div>
-                            <a href="#" id="utf_street_view_btn">Street View</a>
-                        </div>
-                    </div>
+                    
                     <div id="utf_listing_reviews" class="utf_listing_section">
-                        <h3 class="utf_listing_headline_part margin-top-75 margin-bottom-20">Reviews <span>(08)</span></h3>
+                        <h3 class="utf_listing_headline_part margin-top-75 margin-bottom-20">Reviews <span>({{all_reviews.count}})</span></h3>
                         <div class="clearfix"></div>
                         <div class="reviews-container">
                             <div class="row">
                                 <div class="col-lg-3">
                                     <div id="review_summary">
-                                        <strong>4.5</strong>
-                                        <em>Superb Reviews</em>
-                                        <small>Out of 15 Reviews</small>
+                                        
+                                        {% if hotel.average_rating == None %}
+                                        <strong>Not Rated Yet</strong>
+                                        {% else %}
+                                        <strong>{{hotel.average_rating}}/5</strong>
+                                        {% endif %}
+                                            
                                     </div>
                                 </div>
-                                <div class="col-lg-9">
-                                    <div class="row">
-                                        <div class="col-lg-2 review_progres_title"><small><strong>Quality</strong></small></div>
-                                        <div class="col-lg-9">
-                                            <div class="progress">
-                                                <div class="progress-bar" role="progressbar" style="width: 95%" aria-valuenow="95" aria-valuemin="0" aria-valuemax="100"></div>
-                                            </div>
-                                        </div>
-                                        <div class="col-lg-1 review_progres_title"><small><strong>77</strong></small></div>
-                                    </div>
-                                    <div class="row">
-                                        <div class="col-lg-2 review_progres_title"><small><strong>Space</strong></small></div>
-                                        <div class="col-lg-9">
-                                            <div class="progress">
-                                                <div class="progress-bar" role="progressbar" style="width: 90%" aria-valuenow="90" aria-valuemin="0" aria-valuemax="100"></div>
-                                            </div>
-                                        </div>
-                                        <div class="col-lg-1 review_progres_title"><small><strong>15</strong></small></div>
-                                    </div>
-                                    <div class="row">
-                                        <div class="col-lg-2 review_progres_title"><small><strong>Price</strong></small></div>
-                                        <div class="col-lg-9">
-                                            <div class="progress">
-                                                <div class="progress-bar" role="progressbar" style="width: 70%" aria-valuenow="70" aria-valuemin="0" aria-valuemax="100"></div>
-                                            </div>
-                                        </div>
-                                        <div class="col-lg-1 review_progres_title"><small><strong>18</strong></small></div>
-                                    </div>
-                                    <div class="row">
-                                        <div class="col-lg-2 review_progres_title"><small><strong>Service</strong></small></div>
-                                        <div class="col-lg-9">
-                                            <div class="progress">
-                                                <div class="progress-bar" role="progressbar" style="width: 40%" aria-valuenow="40" aria-valuemin="0" aria-valuemax="100"></div>
-                                            </div>
-                                        </div>
-                                        <div class="col-lg-1 review_progres_title"><small><strong>10</strong></small></div>
-                                    </div>
-                                    <div class="row">
-                                        <div class="col-lg-2 review_progres_title"><small><strong>Location</strong></small></div>
-                                        <div class="col-lg-9">
-                                            <div class="progress">
-                                                <div class="progress-bar" role="progressbar" style="width: 20%" aria-valuenow="20" aria-valuemin="0" aria-valuemax="100"></div>
-                                            </div>
-                                        </div>
-                                        <div class="col-lg-1 review_progres_title"><small><strong>05</strong></small></div>
-                                    </div>
-                                </div>
+                                
                             </div>
                         </div>
                         <div class="comments utf_listing_reviews">
                             <ul>
+                                
+                                {% for a in all_reviews %}
+                                    
+                                    
                                 <li>
-                                    <div class="avatar"><img src="images/client-avatar1.jpg" alt="" /></div>
+                                    <div class="avatar"><img src="{{ a.user.profile.image.url }}" alt="" /></div>
                                     <div class="utf_comment_content">
                                         <div class="utf_arrow_comment"></div>
-                                        <div class="utf_star_rating_section" data-rating="5"></div>
-                                        <a href="#" class="rate-review">Helpful Review <i class="fa fa-thumbs-up"></i></a>
-                                        <div class="utf_by_comment">Francis Burton<span class="date"><i class="fa fa-clock-o"></i> Jan 05, 2022 - 8:52 am</span> </div>
-                                        <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Maecenas in pulvinar neque. Nulla finibus lobortis pulvinar. Donec a consectetur nulla. Nulla posuere sapien vitae lectus suscipit, et pulvinar nisi tincidunt.
-                                            Aliquam erat volutpat.</p>
+                                        <div class="utf_by_comment"><p>{{ a.user.profile.full_name }} - {{ a.rating }} <i class="fas fa-star text-warning"></i> </p>  <span class="date"><i class="fa fa-clock-o"></i> {{ a.date }}</span> </div>
+                                        <p>{{ a.review }}</p>
                                     </div>
                                 </li>
+                                {% empty %}
                                 <li>
-                                    <div class="avatar"><img src="images/client-avatar2.jpg" alt="" /> </div>
                                     <div class="utf_comment_content">
                                         <div class="utf_arrow_comment"></div>
-                                        <div class="utf_star_rating_section" data-rating="4"></div>
-                                        <a href="#" class="rate-review">Helpful Review <i class="fa fa-thumbs-up"></i></a>
-                                        <div class="utf_by_comment">Francis Burton<span class="date"><i class="fa fa-clock-o"></i> Jan 05, 2022 - 8:52 am</span> </div>
-                                        <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Maecenas in pulvinar neque. Nulla finibus lobortis pulvinar. Donec a consectetur nulla. Nulla posuere sapien vitae lectus suscipit, et pulvinar nisi tincidunt.
-                                            Aliquam erat volutpat.</p>
+                                        <div class="utf_by_comment">No Reviews Yet</div>
+                                        
                                     </div>
                                 </li>
-                                <li>
-                                    <div class="avatar"><img src="images/client-avatar3.jpg" alt="" /> </div>
-                                    <div class="utf_comment_content">
-                                        <div class="utf_arrow_comment"></div>
-                                        <div class="utf_star_rating_section" data-rating="4"></div>
-                                        <div class="utf_by_comment">Francis Burton<span class="date"><i class="fa fa-clock-o"></i> Jan 05, 2022 - 8:52 am</span> </div>
-                                        <a href="#" class="rate-review">Helpful Review <i class="fa fa-thumbs-up"></i></a>
-                                        <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Maecenas in pulvinar neque. Nulla finibus lobortis pulvinar. Donec a consectetur nulla. Nulla posuere sapien vitae lectus suscipit, et pulvinar nisi tincidunt.
-                                            Aliquam erat volutpat.</p>
-                                    </div>
-                                </li>
-                                <li>
-                                    <div class="avatar"><img src="images/client-avatar1.jpg" alt="" /></div>
-                                    <div class="utf_comment_content">
-                                        <div class="utf_arrow_comment"></div>
-                                        <div class="utf_star_rating_section" data-rating="4.5"></div>
-                                        <div class="utf_by_comment">Francis Burton<span class="date"><i class="fa fa-clock-o"></i> Jan 05, 2022 - 8:52 am</span> </div>
-                                        <a href="#" class="rate-review">Helpful Review <i class="fa fa-thumbs-up"></i></a>
-                                        <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Maecenas in pulvinar neque. Nulla finibus lobortis pulvinar. Donec a consectetur nulla. Nulla posuere sapien vitae lectus suscipit, et pulvinar nisi tincidunt.
-                                            Aliquam erat volutpat.</p>
-                                        <div class="review-images utf_gallery_container">
-                                            <a href="images/review-image-01.jpg" class="utf_gallery"><img src="images/review-image-01.jpg" alt=""></a>
-                                            <a href="images/review-image-02.jpg" class="utf_gallery"><img src="images/review-image-02.jpg" alt=""></a>
-                                            <a href="images/review-image-03.jpg" class="utf_gallery"><img src="images/review-image-03.jpg" alt=""></a>
-                                            <a href="images/review-image-01.jpg" class="utf_gallery"><img src="images/review-image-01.jpg" alt=""></a>
-                                            <a href="images/review-image-02.jpg" class="utf_gallery"><img src="images/review-image-02.jpg" alt=""></a>
-                                            <a href="images/review-image-03.jpg" class="utf_gallery"><img src="images/review-image-03.jpg" alt=""></a>
-                                        </div>
-                                    </div>
-                                </li>
-                                <li>
-                                    <div class="avatar"><img src="images/client-avatar3.jpg" alt="" /> </div>
-                                    <div class="utf_comment_content">
-                                        <div class="utf_arrow_comment"></div>
-                                        <div class="utf_star_rating_section" data-rating="4"></div>
-                                        <div class="utf_by_comment">Francis Burton<span class="date"><i class="fa fa-clock-o"></i> Jan 05, 2022 - 8:52 am</span> </div>
-                                        <a href="#" class="rate-review">Helpful Review <i class="fa fa-thumbs-up"></i></a>
-                                        <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Maecenas in pulvinar neque. Nulla finibus lobortis pulvinar. Donec a consectetur nulla. Nulla posuere sapien vitae lectus suscipit, et pulvinar nisi tincidunt.
-                                            Aliquam erat volutpat.</p>
-                                    </div>
-                                </li>
+                                {% endfor %}
                             </ul>
                         </div>
-                        <div class="clearfix"></div>
-                        <div class="row">
-                            <div class="col-md-12">
-                                <div class="utf_pagination_container_part margin-top-30">
-                                    <nav class="pagination">
-                                        <ul>
-                                            <li><a href="#"><i class="sl sl-icon-arrow-left"></i></a></li>
-                                            <li><a href="#" class="current-page">1</a></li>
-                                            <li><a href="#">2</a></li>
-                                            <li><a href="#">3</a></li>
-                                            <li><a href="#"><i class="sl sl-icon-arrow-right"></i></a></li>
-                                        </ul>
-                                    </nav>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="clearfix"></div>
-                    </div>
-                    <div id="utf_add_review" class="utf_add_review-box">
-                        <h3 class="utf_listing_headline_part margin-bottom-20">Add Your Review</h3>
-                        <span class="utf_leave_rating_title">Your email address will not be published.</span>
-                        <div class="row">
-                            <div class="col-md-6 col-sm-6 col-xs-12">
-                                <div class="clearfix"></div>
-                                <div class="utf_leave_rating margin-bottom-30">
-                                    <input type="radio" name="rating" id="rating-1" value="1" />
-                                    <label for="rating-1" class="fa fa-star"></label>
-                                    <input type="radio" name="rating" id="rating-2" value="2" />
-                                    <label for="rating-2" class="fa fa-star"></label>
-                                    <input type="radio" name="rating" id="rating-3" value="3" />
-                                    <label for="rating-3" class="fa fa-star"></label>
-                                    <input type="radio" name="rating" id="rating-4" value="4" />
-                                    <label for="rating-4" class="fa fa-star"></label>
-                                    <input type="radio" name="rating" id="rating-5" value="5" />
-                                    <label for="rating-5" class="fa fa-star"></label>
-                                </div>
-                                <div class="clearfix"></div>
-                            </div>
-                            <div class="col-md-6 col-sm-6 col-xs-12">
-                                <div class="add-review-photos margin-bottom-30">
-                                    <div class="photoUpload"> <span>Upload Photo <i class="sl sl-icon-arrow-up-circle"></i></span>
-                                        <input type="file" class="upload" />
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <form id="utf_add_comment" class="utf_add_comment">
-                            <fieldset>
-                                <div class="row">
-                                    <div class="col-md-4">
-                                        <label>Name:</label>
-                                        <input type="text" placeholder="Name" value="" />
-                                    </div>
-                                    <div class="col-md-4">
-                                        <label>Email:</label>
-                                        <input type="text" placeholder="Email" value="" />
-                                    </div>
-                                    <div class="col-md-4">
-                                        <label>Subject:</label>
-                                        <input type="text" placeholder="Subject" value="" />
-                                    </div>
-                                </div>
-                                <div>
-                                    <label>Review:</label>
-                                    <textarea cols="40" placeholder="Your Message..." rows="3"></textarea>
-                                </div>
-                            </fieldset>
-                            <button class="button">Submit Review</button>
-                            <div class="clearfix"></div>
-                        </form>
                     </div>
                 </div>
 
@@ -368,8 +251,8 @@
                             <div class="with-forms margin-top-30">
                                 <div class="col-lg-12 col-md-12 ">
                                     <a href="#">Select Room Type</a>
-                                    <select name="room-type" class="utf_chosen_select_single" >
-                                            <option label="Select Time">Select Room</option>
+                                    <select name="room-type" class="utf_chosen_select_single" required>
+                                        <option value="">Select Room</option>
                                         {% for r in hotel.hotel_room_types %}
                                             <option value="{{r.slug}}">{{r.type}}</option>
                                         {% endfor %}
@@ -383,112 +266,43 @@
                         <div class="clearfix"></div>
                     </div>
                     <div class="utf_box_widget margin-top-35">
-                        <h3><i class="sl sl-icon-phone"></i> Contact Info</h3>
-                        <div class="utf_hosted_by_user_title"> <a href="#" class="utf_hosted_by_avatar_listing"><img src="images/dashboard-avatar.jpg" alt=""></a>
-                            <h4><a href="#">Kathy Brown</a><span>Posted 3 Days Ago</span>
-                                <span><i class="sl sl-icon-location"></i> Lonsdale St, Melbourne</span>
+                        <h3><i class="fas fa-user"></i> Contact Info</h3>
+                        <div class="utf_hosted_by_user_title"> <a href="#" class="utf_hosted_by_avatar_listing"><img src="{{hotel.user.profile.image.url}}" style="object-fit: cover;" alt=""></a>
+                            <h4>
+                                <a href="#">{{hotel.user.profile.full_name}}</a>
+                                <span> @{{ hotel.user.username }}</span>
+                                <span> Posted on: {{hotel.date|date:"d M, Y"}}</span>
                             </h4>
                         </div>
                         <ul class="utf_social_icon rounded margin-top-10">
-                            <li><a class="facebook" href="#"><i class="icon-facebook"></i></a></li>
-                            <li><a class="twitter" href="#"><i class="icon-twitter"></i></a></li>
-                            <li><a class="gplus" href="#"><i class="icon-gplus"></i></a></li>
-                            <li><a class="linkedin" href="#"><i class="icon-linkedin"></i></a></li>
-                            <li><a class="instagram" href="#"><i class="icon-instagram"></i></a></li>
+                            <li><a class="facebook" href="{{hotel.user.profile.facebook}}"><i class="fab fa-facebook"></i></a></li>
+                            <li><a class="twitter" href="{{hotel.user.profile.twitter}}"><i class="fab fa-twitter"></i></a></li>
                         </ul>
                         <ul class="utf_listing_detail_sidebar">
-                            <li><i class="sl sl-icon-map"></i> 12345 Little Lonsdale St, Melbourne</li>
-                            <li><i class="sl sl-icon-phone"></i> +(012) 1123-254-456</li>
-                            <li><i class="sl sl-icon-globe"></i> <a href="#">www.example.com</a></li>
-                            <li><i class="fa fa-envelope-o"></i> <a href="mailto:info@example.com">info@example.com</a></li>
+                            <li><i class="fas fa-location-arrow"></i>  {{hotel.user.profile.address}} {{hotel.user.profile.state}} {{hotel.user.profile.city}} {{hotel.user.profile.country}}</li>
+                            <li><i class="fas fa-phone"></i> {{hotel.user.profile.phone}}</li>
+                            <li><i class="fas fa-envelope-o"></i> <a href="mailto:{{hotel.user.email}}">{{hotel.user.email}}</a></li>
                         </ul>
                     </div>
 
-                    <div class="utf_box_widget opening-hours margin-top-35">
-                        <h3><i class="sl sl-icon-clock"></i> Timing</h3>
-                        <ul>
-                            <li>Monday <span>09:00 AM - 10:00 PM</span></li>
-                            <li>Tuesday <span>09:00 AM - 10:00 PM</span></li>
-                            <li>Wednesday <span>09:00 AM - 10:00 PM</span></li>
-                            <li>Thursday <span>09:00 AM - 10:00 PM</span></li>
-                            <li>Friday <span>09:00 AM - 10:00 PM</span></li>
-                            <li>Saturday <span>09:00 AM - 10:00 PM</span></li>
-                            <li>Sunday <span>09:00 AM - 10:00 PM</span></li>
-                        </ul>
-                    </div>
-                    <div class="opening-hours margin-top-35">
-                        <div class="utf_coupon_widget" style="background-image: url(images/coupon-bg-1.jpg);">
-                            <div class="utf_coupon_overlay"></div>
-                            <a href="#" class="utf_coupon_top">
-                                <h3>Book Now & Get 50% Discount</h3>
-                                <div class="utf_coupon_expires_date">Date of Expires 05/08/2022</div>
-                                <div class="utf_coupon_used"><strong>How to use?</strong> Just show us this coupon on a screen</div>
-                            </a>
-                            <div class="utf_coupon_bottom">
-                                <p>Coupon Code</p>
-                                <div class="utf_coupon_code">DL76T</div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="utf_box_widget opening-hours margin-top-35">
-                        <h3><i class="sl sl-icon-envelope-open"></i> Sidebar Form</h3>
-                        <form id="contactform">
-                            <div class="row">
-                                <div class="col-md-12">
-                                    <input name="name" type="text" placeholder="Name" required="">
-                                </div>
-                                <div class="col-md-12">
-                                    <input name="email" type="email" placeholder="Email" required="">
-                                </div>
-                                <div class="col-md-12">
-                                    <input name="phone" type="text" placeholder="Phone" required="">
-                                </div>
-                                <div class="col-md-12">
-                                    <textarea name="comments" cols="40" rows="2" id="comments" placeholder="Your Message" required=""></textarea>
-                                </div>
-                            </div>
-                            <input type="submit" class="submit button" id="submit" value="Contact Agent">
-                        </form>
-                    </div>
-                    <div class="utf_box_widget opening-hours margin-top-35">
-                        <h3><i class="sl sl-icon-info"></i> Google AdSense</h3>
-                        <span><img src="images/google_adsense.jpg" alt="" /></span>
-                    </div>
-                    <div class="utf_box_widget margin-top-35">
-                        <h3><i class="sl sl-icon-phone"></i> Quick Contact to Help?</h3>
-                        <p>Excepteur sint occaecat non proident, sunt in culpa officia deserunt mollit anim id est laborum.</p>
-                        <ul class="utf_social_icon rounded">
-                            <li><a class="facebook" href="#"><i class="icon-facebook"></i></a></li>
-                            <li><a class="twitter" href="#"><i class="icon-twitter"></i></a></li>
-                            <li><a class="gplus" href="#"><i class="icon-gplus"></i></a></li>
-                            <li><a class="linkedin" href="#"><i class="icon-linkedin"></i></a></li>
-                            <li><a class="instagram" href="#"><i class="icon-instagram"></i></a></li>
-                        </ul>
-                        <a class="utf_progress_button button fullwidth_block margin-top-5" href="contact.html">Contact Us</a>
-                    </div>
                     <div class="utf_box_widget listing-share margin-top-35 margin-bottom-40 no-border">
-                        <h3><i class="sl sl-icon-pin"></i> Bookmark Listing</h3>
-                        <span>1275 People Bookmarked Listings</span>
-                        <button class="like-button"><span class="like-icon"></span> Login to Bookmark Listing</button>
-                        <ul class="utf_social_icon rounded margin-top-35">
-                            <li><a class="facebook" href="#"><i class="icon-facebook"></i></a></li>
-                            <li><a class="twitter" href="#"><i class="icon-twitter"></i></a></li>
-                            <li><a class="gplus" href="#"><i class="icon-gplus"></i></a></li>
-                            <li><a class="linkedin" href="#"><i class="icon-linkedin"></i></a></li>
-                            <li><a class="instagram" href="#"><i class="icon-instagram"></i></a></li>
-                        </ul>
-                        <div class="clearfix"></div>
+                        <h3><i class="fas fa-tag"></i> Bookmark Listing</h3>
+                        <span>{{all_reviews.count}} People Bookmarked This Hotel</span>
                     </div>
                     <div class="utf_box_widget opening-hours review-avg-wrapper margin-top-35">
-                        <h3><i class="sl sl-icon-star"></i> Rating Average </h3>
+                        <h3><i class="fas fa-star"></i> Rating Average </h3>
                         <div class="box-inner">
                             <div class="rating-avg-wrapper text-theme clearfix">
-                                <div class="rating-avg">4.8</div>
-                                <div class="rating-after">
-                                    <div class="rating-mode">/5 Average</div>
+                                {% if hotel.average_rating == None %}
+                                <div class="utf_counter_star_rating">No Reviews Yet</div>
 
+                                {% else %}
+                                <div class="rating-avg">{{hotel.average_rating}}</div>
+                                <div class="rating-after">
+                                    <div class="rating-mode">/5 ({{hotel.rating_count}} Reviews)</div>
+                                    
                                 </div>
+                                {% endif %}
                             </div>
                             <div class="ratings-avg-wrapper">
                                 <div class="ratings-avg-item">
@@ -518,7 +332,7 @@
             </div>
         </div>
 
-        <section class="fullwidth_block padding-top-20 padding-bottom-50">
+        <!-- <section class="fullwidth_block padding-top-20 padding-bottom-50">
             <div class="container">
                 <div class="row slick_carousel_slider">
                     <div class="col-md-12">
@@ -658,33 +472,6 @@
                     </div>
                 </div>
             </div>
-        </section>
+        </section> -->
 
-        <section class="utf_cta_area_item utf_cta_area2_block">
-            <div class="container">
-                <div class="row">
-                    <div class="col-md-12">
-                        <div class="utf_subscribe_block clearfix">
-                            <div class="col-md-8 col-sm-7">
-                                <div class="section-heading">
-                                    <h2 class="utf_sec_title_item utf_sec_title_item2">Subscribe to Newsletter!</h2>
-                                    <p class="utf_sec_meta">
-                                        Subscribe to get latest updates and information.
-                                    </p>
-                                </div>
-                            </div>
-                            <div class="col-md-4 col-sm-5">
-                                <div class="contact-form-action">
-                                    <form method="post">
-                                        <span class="la la-envelope-o"></span>
-                                        <input class="form-control" type="email" placeholder="Enter your email" required="">
-                                        <button class="utf_theme_btn" type="submit">Subscribe</button>
-                                    </form>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </section>
 {% endblock content %}

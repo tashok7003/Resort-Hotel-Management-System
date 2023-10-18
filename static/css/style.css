@@ -157,3 +157,6 @@ textarea::-moz-placeholder {
 textarea:-ms-input-placeholder {
     color: #828282;
 }
+.d-none{
+    display: none;
+}

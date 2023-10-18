@@ -6,6 +6,7 @@ from django.template.defaultfilters import escape
 from django.utils.text import slugify
 from shortuuid.django_fields import ShortUUIDField
 from django.utils.html import mark_safe
+from django.core.validators import MinValueValidator, MaxValueValidator
 
 from userauths.models import User
 
@@ -43,6 +44,41 @@ HOTEL_STATUS = (
 GENDER = (
     ("Male", "Male"),
     ("Female", "Female"),
+)
+
+
+DISCOUNT_TYPE = (
+    ("Percentage", "Percentage"),
+    ("Flat Rate", "Flat Rate"),
+)
+
+PAYMENT_STATUS = (
+    ("paid", "Paid"),
+    ("pending", "Pending"),
+    ("processing", "Processing"),
+    ("cancelled", "Cancelled"),
+    ("initiated", 'Initiated'),
+    ("failed", 'failed'),
+    ("refunding", 'refunding'),
+    ("refunded", 'refunded'),
+    ("unpaid", 'unpaid'),
+    ("expired", 'expired'),
+)
+
+
+
+NOTIFICATION_TYPE = (
+    ("Booking Confirmed", "Booking Confirmed"),
+    ("Booking Cancelled", "Booking Cancelled"),
+)
+
+
+RATING = (
+    ( 1,  "★☆☆☆☆"),
+    ( 2,  "★★☆☆☆"),
+    ( 3,  "★★★☆☆"),
+    ( 4,  "★★★★☆"),
+    ( 5,  "★★★★★"),
 )
 
 class Hotel(models.Model):
@@ -87,6 +123,14 @@ class Hotel(models.Model):
 
     def hotel_room_types(self):
         return RoomType.objects.filter(hotel=self)
+    
+    def average_rating(self):
+        average_rating = Review.objects.filter(hotel=self, active=True).aggregate(avg_rating=models.Avg("rating"))
+        return average_rating['avg_rating']
+    
+    def rating_count(self):
+        rating_count = Review.objects.filter(hotel=self, active=True).count()
+        return rating_count
     
 class HotelGallery(models.Model):
     hotel = models.ForeignKey(Hotel, on_delete=models.CASCADE)
@@ -160,7 +204,7 @@ class Room(models.Model):
     date = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return f"{self.hotel.name} - Room {self.room_number}"
+        return f"{self.hotel.name} - {self.room_type.type} -  Room {self.room_number}"
 
     def price(self):
         return self.room_type.price
@@ -171,20 +215,94 @@ class Room(models.Model):
 
 
 class Booking(models.Model):
-    user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
+    user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
+    payment_status = models.CharField(max_length=100, choices=PAYMENT_STATUS, default="initiated")
+
+    full_name = models.CharField(max_length=1000, null=True, blank=True)
+    email = models.EmailField(null=True, blank=True)
+    phone = models.CharField(max_length=1000, null=True, blank=True)
+    
     hotel = models.ForeignKey(Hotel, on_delete=models.SET_NULL, null=True)
+    room_type = models.ForeignKey(RoomType, on_delete=models.SET_NULL, null=True)
     room = models.ManyToManyField(Room)
+    before_discount = models.DecimalField(max_digits=12, decimal_places=2, default=0.00)
+    total = models.DecimalField(max_digits=12, decimal_places=2, default=0.00)
+    saved = models.DecimalField(max_digits=12, decimal_places=2, default=0.00)
     check_in_date = models.DateField()
     check_out_date = models.DateField()
+    total_days = models.PositiveIntegerField(default=0)
     num_adults = models.PositiveIntegerField(default=1)
     num_children = models.PositiveIntegerField(default=0)
+    checked_in = models.BooleanField(default=False)
+    checked_out = models.BooleanField(default=False)
     is_active = models.BooleanField(default=True)
+    checked_in_tracker = models.BooleanField(default=False, help_text="DO NOT CHECK THIS BOX")
+    checked_out_tracker = models.BooleanField(default=False, help_text="DO NOT CHECK THIS BOX")
     date = models.DateTimeField(auto_now_add=True, null=True, blank=True)
+    coupons = models.ManyToManyField("hotel.Coupon", blank=True)
+    stripe_payment_intent = models.CharField(max_length=200,null=True, blank=True)
+    success_id = ShortUUIDField(length=300, max_length=505, alphabet="abcdefghijklmnopqrstuvxyz1234567890")
     booking_id = ShortUUIDField(unique=True, length=10, max_length=20, alphabet="abcdefghijklmnopqrstuvxyz")
 
 
     def __str__(self):
-        return f"{self.room.hotel.name} - Room {self.room.room_number}"
+        return f"{self.booking_id}"
+    
+    def rooms(self):
+        return self.room.all().count()
+    
+class ActivityLog(models.Model):
+    booking = models.ForeignKey(Booking, on_delete=models.CASCADE)
+    guest_out = models.DateTimeField()
+    guest_in = models.DateTimeField()
+    description = models.TextField(null=True, blank=True)
+    date = models.DateTimeField(auto_now_add=True, null=True, blank=True)
+
+    def __str__(self):
+        return str(self.booking)
+    
+class StaffOnDuty(models.Model):
+    booking = models.ForeignKey(Booking, on_delete=models.CASCADE)
+    staff_id = models.CharField(null=True, blank=True, max_length=100)
+    date = models.DateTimeField(auto_now_add=True, null=True, blank=True)
+
+    def __str__(self):
+        return str(self.staff_id)
+    
+
+class Coupon(models.Model):
+    code = models.CharField(max_length=1000)
+    type = models.CharField(max_length=100, choices=DISCOUNT_TYPE, default="Percentage")
+    discount = models.IntegerField(default=1, validators=[MinValueValidator(0), MaxValueValidator(100)])
+    redemption = models.IntegerField(default=0)
+    date = models.DateTimeField(auto_now_add=True)
+    active = models.BooleanField(default=True)
+    make_public = models.BooleanField(default=False)
+    valid_from = models.DateField()
+    valid_to = models.DateField()
+    cid = ShortUUIDField(length=10, max_length=25, alphabet="abcdefghijklmnopqrstuvxyz")
+
+    
+    def __str__(self):
+        return self.code
+    
+    class Meta:
+        ordering =['-id']
+
+
+class CouponUsers(models.Model):
+    coupon = models.ForeignKey(Coupon, on_delete=models.CASCADE)
+    booking = models.ForeignKey(Booking, on_delete=models.CASCADE)
+    
+    full_name = models.CharField(max_length=1000)
+    email = models.CharField(max_length=1000)
+    mobile = models.CharField(max_length=1000)
+
+    def __str__(self):
+        return str(self.coupon.code)
+    
+    class Meta:
+        ordering =['-id']
 
 
 class RoomServices(models.Model):
@@ -197,3 +315,49 @@ class RoomServices(models.Model):
     def str(self):
         return str(self.booking) + " " + str(self.room) + " " + str(self.service_type)
 
+class Notification(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, blank=True, null=True, related_name="user")
+    booking = models.ForeignKey(Booking, on_delete=models.CASCADE, null=True, blank=True)
+    type = models.CharField(max_length=100, default="new_order", choices=NOTIFICATION_TYPE)
+    seen = models.BooleanField(default=False)
+    nid = ShortUUIDField(unique=True, length=10, max_length=20, alphabet="abcdefghijklmnopqrstuvxyz")
+    date= models.DateField(auto_now_add=True)
+    
+    def __str__(self):
+        return str(self.user.username)
+    
+    class Meta:
+        ordering = ['-date']
+
+
+class Bookmark(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, blank=True, null=True)
+    hotel = models.ForeignKey(Hotel, on_delete=models.CASCADE, null=True, blank=True)
+    bid = ShortUUIDField(unique=True, length=10, max_length=20, alphabet="abcdefghijklmnopqrstuvxyz")
+    date= models.DateField(auto_now_add=True)
+    
+    def __str__(self):
+        return str(self.user.username)
+    
+    class Meta:
+        ordering = ['-date']
+
+
+
+class Review(models.Model):
+    user = models.ForeignKey(User, on_delete=models.SET_NULL, blank=True, null=True)
+    hotel = models.ForeignKey(Hotel, on_delete=models.SET_NULL, blank=True, null=True, related_name="reviews")
+    review = models.TextField(null=True, blank=True)
+    reply = models.CharField(null=True, blank=True, max_length=1000)
+    rating = models.IntegerField(choices=RATING, default=None)
+    active = models.BooleanField(default=False)
+    helpful = models.ManyToManyField(User, blank=True, related_name="helpful")
+    date = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name_plural = "Reviews & Rating"
+        ordering = ["-date"]
+        
+    def __str__(self):
+        return f"{self.user.username} - {self.rating}"
+        

@@ -22235,3 +22235,7 @@ select.selectpicker {
 .dashed{
     border-bottom: 1px dashed gray;
 }
+
+.d-none{
+    display: none;
+}

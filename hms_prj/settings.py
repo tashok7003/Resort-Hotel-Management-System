@@ -13,6 +13,10 @@ https://docs.djangoproject.com/en/3.2/ref/settings/
 from pathlib import Path
 import os
 
+from environs import Env
+env = Env()  
+env.read_env()  
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -46,6 +50,7 @@ INSTALLED_APPS = [
     'booking',
     'addon',
     'userauths',
+    'user_dashboard',
 
     # Third Party Apps
     'import_export',
@@ -161,6 +166,26 @@ LOGOUT_REDIRECT_URL = "userauths:sign-in"
 
 AUTH_USER_MODEL = 'userauths.User'
 
+# Stripe 
+STRIPE_PUBLIC_KEY = env("STRIPE_PUBLIC_KEY")
+STRIPE_PRIVATE_KEY = env("STRIPE_PRIVATE_KEY")
+
+# Flutterwave
+FLUTTERWAVE_PUBLIC = env("STRIPE_PRIVATE_KEY")
+
+# Website Address
+WEBSITE_ADDRESS = env("WEBSITE_ADDRESS")
+
+# Anymail
+EMAIL_BACKEND = env("EMAIL_BACKEND")
+
+DEFAULT_FROM_EMAIL = env("DEFAULT_FROM_EMAIL")
+ANYMAIL = {
+    "MAILGUN_API_KEY": env("MAILGUN_API_KEY"),
+    "MAILGUN_SENDER_DOMAIN": env("MAILGUN_SENDER_DOMAIN"),  
+}
+
+
 # Default primary key field type
 # https://docs.djangoproject.com/en/3.2/ref/settings/#default-auto-field
 
@@ -219,13 +244,14 @@ JAZZMIN_SETTINGS = {
         "hotel.Guest":"fas fa-user",
         "hotel.Room":"fas fa-bed",
         "hotel.RoomServices":"fas fa-user-cog",
+        "hotel.Notification":"fas fa-bell",
+        "hotel.Coupon":"fas fa-tag",
+        "hotel.Bookmark":"fas fa-heart",
     },
 
 
     "show_ui_builder" : True
 }
-
-
 
 JAZZMIN_UI_TWEAKS = {
     "navbar_small_text": False,
@@ -267,7 +293,6 @@ customColorPalette = [
     {"color": "hsl(231, 48%, 48%)", "label": "Indigo"},
     {"color": "hsl(207, 90%, 54%)", "label": "Blue"},
 ]
-
 
 CKEDITOR_5_CONFIGS = {
     "default": {

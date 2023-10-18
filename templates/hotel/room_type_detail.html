@@ -41,13 +41,17 @@
                   <li>Room Capacity: {{r.room_type.room_capacity}}</li>
                   </ul>
                   <input type="hidden" class="room_id_{{r.id}}" value="{{r.id}}" id="room_id">
+                  <input type="hidden" class="room_number_{{r.id}}" value="{{r.room_number}}" id="room_number">
                   <button class="button border add-to-selection" data-index="{{r.id}}"><i class="fas fa-shopping-cart"></i> Add To Selection</button> 
               </div>
               </div>
           {% endfor %}
           <input type="hidden" value="{{hotel.id}}" id="id">
           <input type="hidden" value="{{hotel.name}}" id="hotel_name">
-          <input type="hidden" value="{{room_type.type}}" id="room_type">
+          <input type="hidden" value="{{room_type.type}}" id="room_name">
+          <input type="hidden" value="{{room_type.price}}" id="room_price">
+          <input type="hidden" value="{{room_type.number_of_beds}}" id="number_of_beds">
+          <input type="hidden" value="{{room_type.id}}" id="room_type">
           <input type="hidden" value="{{checkin}}" id="checkin">
           <input type="hidden" value="{{checkout}}" id="checkout">
           <input type="hidden" value="{{adult}}" id="adult">
@@ -67,7 +71,7 @@
                   </div>
                   <div class="col-lg-12 col-md-12 select_date_box">
                       <label for="">Check-out Date</label>
-                      <input type="date" name="checkout" value="{{checkout}}" id="date-picker" placeholder="Select Date">
+                      <input type="date" class="checkout_date" name="checkout" value="{{checkout}}"  placeholder="Select Date">
                   </div>
                   <div class="with-forms">
                       <div class="col-lg-12 col-md-12">
@@ -88,8 +92,10 @@
                   <div class="with-forms margin-top-30">
                       <div class="col-lg-12 col-md-12 ">
                           <a href="#">Select Room Type</a>
-                          <select name="room-type" class="utf_chosen_select_single" >
-                                  <option label="Select Time">Select Room</option>
+                          <select name="room-type" class="utf_chosen_select_single" required>
+                              <!-- <option value="{{room_type|lower}}">{{room_type}}</option> -->
+                              <option value="{{room_type|lower}}">{{room_type}}</option>
+
                               {% for r in hotel.hotel_room_types %}
                                   <option value="{{r.slug}}">{{r.type}}</option>
                               {% endfor %}
@@ -107,5 +113,17 @@
       </div>      
     </div>    
   </section>
+
+  <script>
+    $(document).ready(function(){
+        
+        var dateInput = $('#checkout_date');
+
+        dateInput.on('change', function() {
+            var selectedDate = dateInput.val();
+            console.log('Selected date:', selectedDate);
+        });
+    })
+  </script>
   
 {% endblock content %}

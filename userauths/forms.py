@@ -22,3 +22,32 @@ class UserRegisterForm(UserCreationForm):
         for visible in self.visible_fields():
             visible.field.widget.attrs['class'] = 'with-border'
             # visible.field.widget.attrs['placeholder'] = visible.field.label
+
+
+class UserUpdateForm(forms.ModelForm):
+    class Meta:
+        model = User
+        fields = ['email']
+
+
+class ProfileUpdateForm(forms.ModelForm):
+    
+    class Meta:
+        model = Profile
+        fields = [
+            'image',
+            'full_name', 
+            'phone',
+            'gender',
+            'country',
+            'city',
+            'state',
+            'address',
+            'identity_type',
+            'identity_image',
+            'facebook',
+            'twitter',
+        ]
+        widgets = {
+            'image': FileInput(attrs={'onchange': 'loadFile(event)', 'class':'upload'}),
+        }
