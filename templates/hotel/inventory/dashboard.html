@@ -1,0 +1,104 @@
+{% extends 'partials/dashboard_base.html' %}
+{% block dashboard_content %}
+<div class="dashboard-content-box">
+    <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">Inventory Management</h5>
+            <a href="{% url 'inventory_create' %}" class="btn btn-primary">Add Item</a>
+        </div>
+        <div class="card-body">
+            <!-- Alerts Section -->
+            {% if alerts %}
+            <div class="alert alert-warning">
+                <h6>Active Alerts</h6>
+                <ul class="list-unstyled mb-0">
+                    {% for alert in alerts %}
+                    <li class="d-flex justify-content-between align-items-center mb-2">
+                        {{ alert.message }}
+                        <a href="{% url 'resolve_alert' alert.id %}" class="btn btn-sm btn-success">Resolve</a>
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
+            {% endif %}
+
+            <!-- Stats Cards -->
+            <div class="row mb-4">
+                <div class="col-md-3">
+                    <div class="card bg-light">
+                        <div class="card-body">
+                            <h6>Total Items</h6>
+                            <h3>{{ items.count }}</h3>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-light">
+                        <div class="card-body">
+                            <h6>Low Stock Items</h6>
+                            <h3>{{ low_stock_count }}</h3>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-light">
+                        <div class="card-body">
+                            <h6>Total Value</h6>
+                            <h3>${{ total_value|floatformat:2 }}</h3>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Inventory Table -->
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Item</th>
+                            <th>Category</th>
+                            <th>Current Stock</th>
+                            <th>Status</th>
+                            <th>Last Updated</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in items %}
+                        <tr>
+                            <td>{{ item.name }}</td>
+                            <td>{{ item.category.name }}</td>
+                            <td>
+                                <div class="progress">
+                                    <div class="progress-bar {% if item.current_stock <= item.minimum_stock %}bg-danger
+                                                           {% elif item.current_stock <= item.reorder_point %}bg-warning
+                                                           {% else %}bg-success{% endif %}" 
+                                         role="progressbar" 
+                                         style="width: {{ item.current_stock|multiply:100|divide:item.reorder_point }}%">
+                                        {{ item.current_stock }}
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                {% if item.current_stock <= item.minimum_stock %}
+                                    <span class="badge bg-danger">Low Stock</span>
+                                {% elif item.current_stock <= item.reorder_point %}
+                                    <span class="badge bg-warning">Reorder Soon</span>
+                                {% else %}
+                                    <span class="badge bg-success">Adequate</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ item.last_restocked|date:"M d, Y" }}</td>
+                            <td>
+                                <a href="{% url 'inventory_transaction' item.pk %}" class="btn btn-sm btn-primary">Update</a>
+                                <a href="{% url 'inventory_detail' item.pk %}" class="btn btn-sm btn-info">View</a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

@@ -7,7 +7,7 @@
     <meta name="description" content="">
     <meta http-equiv="Content-Type" content="text/html;charset=UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Desphixs - Hotel Management System</title>
+    <title>Resort Management System</title>
 
     <!-- Favicon -->
     <link rel="shortcut icon" href="images/favicon.png">
@@ -15,7 +15,7 @@
     <link rel="stylesheet" href="{% static 'css/stylesheet.css' %}">
     <link rel="stylesheet" href="{% static 'css/mmenu.css' %}">
     <link rel="stylesheet" href="{% static 'css/style.css' %}" id="colors">
-    <link href="{% static 'css/datedropper.css' %}" rel="stylesheet" type="text/css">
+    <!-- <link href="{% static 'vendor/datedropper/datedropper.css' %}" rel="stylesheet" type="text/css"> -->
 
     <!-- Icons, Font and assets -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
@@ -37,6 +37,8 @@
     <script src="https://smtpjs.com/v3/smtp.js"></script> 
     <link href="https://fonts.googleapis.com/css?family=Nunito:300,400,600,700,800&display=swap&subset=latin-ext,vietnamese" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css?family=Open+Sans:300,400,500,600,700,800" rel="stylesheet" type="text/css">
+    <link href='https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.css' rel='stylesheet' />
+    <script src='https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.js'></script>
 
 </head>
 
@@ -58,7 +60,7 @@
             <div id="header">
                 <div class="container">
                     <div class="utf_left_side">
-                        <div id="logo"> <a href="index_1.html"><img src="{% static 'images/logo.png' %}" alt=""></a> </div>
+                        <div id="logo"> <a href="/"><img src="{% static 'images/logo.png' %}" alt=""></a> </div>
                         <div class="mmenu-trigger">
                             <button class="hamburger utfbutton_collapse" type="button">
 				<span class="utf_inner_button_box">
@@ -86,8 +88,8 @@
                                 <li><a href="#">Blog</a></li>
                                 <li><a href="#">Pages</a>
                                     <ul>
-                                        <li><a href="page_about.html">About Us</a></li>
-                                        <li><a href="contact.html">Contact</a></li>
+                                        <li><a href="">About Us</a></li>
+                                        <li><a href="">Contact</a></li>
                                     </ul>
                                 </li>
                             </ul>
@@ -193,13 +195,14 @@
             
         <div class="clearfix"></div>
         
+        {% block footer %}
         <!-- Footer -->
         <div id="footer" class="footer_sticky_part">
             <div class="container">
                 <div class="row">
                     <div class="col-md-4 col-sm-12 col-xs-12">
                         <h4>About Us</h4>
-                        <p>Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore</p>
+                        <p>Welcome to Our Resort, where luxury meets nature. Nestled in the heart of Bangalore, our resort offers a perfect blend of comfort, tranquility, and adventure. Whether you're here to relax by the pool, explore scenic trails, or indulge in world-class dining, we provide an unforgettable experience for every guest. With our exceptional service, spacious accommodations, and breath taking surroundings, is your ultimate destination for a getaway that feels just like home – only better.</p>
                     </div>
                     <div class="col-md-2 col-sm-3 col-xs-6">
                         <h4>Useful Links</h4>
@@ -248,6 +251,8 @@
                 </div>
             </div>
         </div>
+        {% endblock footer %}
+    
         <div id="bottom_backto_top"><a href="#"></a></div>
     </div>
 
@@ -283,10 +288,6 @@
     <script src="{% static 'scripts/infobox.min.js' %}"></script> 
     <script src="{% static 'scripts/markerclusterer.js' %}"></script> 
     <script src="{% static 'scripts/maps.js' %}"></script>
-    <script src="{% static 'scripts/datedropper.js' %}"></script> 
-    <script src="{% static 'scripts/quantityButtons.js' %}"></script>
-    <script src="{% static 'scripts/moment.min.js' %}"></script>
-    <script src="{% static 'scripts/daterangepicker.js' %}"></script>
     <script src="{% static 'scripts/moment.min.js' %}"></script>
     <script src="{% static 'scripts/daterangepicker.js' %}"></script>
     
@@ -347,6 +348,27 @@
         $(window).on('load', function() {
             $('#booking-date-search').val('');
         });
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script src="{% static 'js/dashboard-charts.js' %}"></script>
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Mobile menu toggle
+        document.querySelector('.utfbutton_collapse').addEventListener('click', function() {
+            document.querySelector('.utf_dashboard_navigation').classList.toggle('active');
+        });
+        
+        // Close menu when clicking outside on mobile
+        document.addEventListener('click', function(e) {
+            if(window.innerWidth < 992) {
+                const sidebar = document.querySelector('.utf_dashboard_navigation');
+                const toggleBtn = document.querySelector('.utfbutton_collapse');
+                if(!sidebar.contains(e.target) && !toggleBtn.contains(e.target)) {
+                    sidebar.classList.remove('active');
+                }
+            }
+        });
+    });
     </script>
 </body>
 

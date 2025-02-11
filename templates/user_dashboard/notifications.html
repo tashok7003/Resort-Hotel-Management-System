@@ -1,4 +1,3 @@
-
 {% extends 'partials/dashboard_base.html' %}
 {% load static %}
 {% block content %}
@@ -24,24 +23,45 @@
                         </div>
                         <h4 class="noti-text">Notifications</h4>
                         
-                        <ul class="">
-                            
-                            {% for n in notifications %}
-                                <li class="noti-div-{{n.id}}">
-                                    {% if n.type == "Booking Confirmed" %}
-                                         Your booking (#{{n.booking.booking_id}}) has been placed successfully. <a href="#" data-index="{{n.id}}"  id=""  class=" noti-{{n.id}} close-list-item mark-noti-as-seen"><i class="fa fa-close"></i></a>
-                                    {% endif %}
+                        <div class="ai-notification-system">
+                          <div class="notification-header mb-3">
+                            <div class="alert alert-info">
+                              <i class="fas fa-robot"></i> AI Predictions: 
+                              <span id="predictionText">{{ prediction_message }}</span>
+                            </div>
+                          </div>
+                          
+                          <div class="notification-filters btn-group mb-3">
+                            <button class="btn btn-sm btn-outline-primary active" data-filter="all">All</button>
+                            <button class="btn btn-sm btn-outline-primary" data-filter="upcoming">Upcoming</button>
+                            <button class="btn btn-sm btn-outline-primary" data-filter="payment">Payment</button>
+                            <button class="btn btn-sm btn-outline-primary" data-filter="cancellation">Cancellations</button>
+                          </div>
 
-                                    {% if n.type == "Booking Cancelled" %}
-                                         Your booking (#{{n.booking.booking_id}}) has been cancelled. <a href="#"  data-index="{{n.id}}" id=""  class=" noti-{{n.id}} close-list-item mark-noti-as-seen"><i class="fa fa-close"></i></a>
-                                    {% endif %}
-                                </li>
-                                {% empty %}
-                                        <li>
-                                            <h6>No Notifications Yet</h6>
-                                        </li>
+                          <div class="notification-list">
+                            {% for alert in smart_alerts %}
+                            <div class="notification-item card mb-2 alert-{{ alert.type }}">
+                              <div class="card-body">
+                                <div class="d-flex justify-content-between align-items-center">
+                                  <div>
+                                    <span class="prediction-badge badge bg-{{ alert.priority }}">
+                                      {{ alert.probability }}% Confidence
+                                    </span>
+                                    {{ alert.message|safe }}
+                                  </div>
+                                  <div class="notification-actions">
+                                    <button class="btn btn-sm btn-action" 
+                                            data-action="resolve" 
+                                            data-id="{{ alert.id }}">
+                                      <i class="fas fa-check"></i>
+                                    </button>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
                             {% endfor %}
-                        </ul>
+                          </div>
+                        </div>
                     </div>
                 </div>
             </div>

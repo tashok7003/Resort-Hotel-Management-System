@@ -1,0 +1,154 @@
+{% extends 'partials/dashboard_base.html' %}
+{% load static %}
+
+{% block dashboard_content %}
+<div class="dashboard-content-box">
+    <div class="card">
+        <div class="card-header">
+            <h5 class="mb-0">Reports Dashboard</h5>
+        </div>
+        <div class="card-body">
+            <!-- Quick Stats -->
+            <div class="row mb-4">
+                <div class="col-md-4">
+                    <div class="card bg-light">
+                        <div class="card-body">
+                            <h6>Today's Stats</h6>
+                            <div class="d-flex justify-content-between">
+                                <span>Bookings:</span>
+                                <span>{{ daily_stats.total_bookings }}</span>
+                            </div>
+                            <div class="d-flex justify-content-between">
+                                <span>Revenue:</span>
+                                <span>${{ daily_stats.total_revenue }}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card bg-light">
+                        <div class="card-body">
+                            <h6>Weekly Stats</h6>
+                            <div class="d-flex justify-content-between">
+                                <span>Bookings:</span>
+                                <span>{{ weekly_stats.total_bookings }}</span>
+                            </div>
+                            <div class="d-flex justify-content-between">
+                                <span>Revenue:</span>
+                                <span>${{ weekly_stats.total_revenue }}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card bg-light">
+                        <div class="card-body">
+                            <h6>Monthly Stats</h6>
+                            <div class="d-flex justify-content-between">
+                                <span>Bookings:</span>
+                                <span>{{ monthly_stats.total_bookings }}</span>
+                            </div>
+                            <div class="d-flex justify-content-between">
+                                <span>Revenue:</span>
+                                <span>${{ monthly_stats.total_revenue }}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Report Generation -->
+            <div class="row mb-4">
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-body">
+                            <h6>Generate Periodic Report</h6>
+                            <form action="{% url 'booking:periodic_report' %}" method="get">
+                                <div class="row">
+                                    <div class="col-md-5">
+                                        <div class="mb-3">
+                                            <label class="form-label">Start Date</label>
+                                            <input type="date" name="start_date" class="form-control" required>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-5">
+                                        <div class="mb-3">
+                                            <label class="form-label">End Date</label>
+                                            <input type="date" name="end_date" class="form-control" required>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-2">
+                                        <div class="mb-3">
+                                            <label class="form-label">&nbsp;</label>
+                                            <button type="submit" class="btn btn-primary w-100">Generate</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-body">
+                            <h6>Export Reports</h6>
+                            <form action="{% url 'booking:export_report' %}" method="get">
+                                <div class="row">
+                                    <div class="col-md-5">
+                                        <div class="mb-3">
+                                            <label class="form-label">Start Date</label>
+                                            <input type="date" name="start_date" class="form-control" required>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-5">
+                                        <div class="mb-3">
+                                            <label class="form-label">End Date</label>
+                                            <input type="date" name="end_date" class="form-control" required>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-2">
+                                        <div class="mb-3">
+                                            <label class="form-label">&nbsp;</label>
+                                            <button type="submit" class="btn btn-success w-100">Export</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recent Bookings -->
+            <h6>Recent Group Bookings</h6>
+            <div class="table-responsive">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Group Name</th>
+                            <th>Size</th>
+                            <th>Check-in</th>
+                            <th>Total</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for booking in recent_bookings %}
+                        <tr>
+                            <td>{{ booking.group_name }}</td>
+                            <td>{{ booking.group_size }}</td>
+                            <td>{{ booking.booking.check_in_date }}</td>
+                            <td>${{ booking.booking.total }}</td>
+                            <td>
+                                <a href="{% url 'booking:group_booking_report' booking.id %}" 
+                                   class="btn btn-sm btn-info">View Report</a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

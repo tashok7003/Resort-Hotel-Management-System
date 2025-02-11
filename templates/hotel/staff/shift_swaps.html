@@ -1,0 +1,56 @@
+{% extends 'partials/dashboard_base.html' %}
+{% load static %}
+
+{% block dashboard_content %}
+<div class="dashboard-content-box">
+    <div class="card">
+        <div class="card-header">
+            <h5 class="mb-0">Shift Swap Requests</h5>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Requester</th>
+                            <th>Requested With</th>
+                            <th>Original Shift</th>
+                            <th>Requested Shift</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for swap in swap_requests %}
+                        <tr>
+                            <td>{{ swap.requester_shift.staff.user.get_full_name }}</td>
+                            <td>{{ swap.requested_shift.staff.user.get_full_name }}</td>
+                            <td>{{ swap.requester_shift.start_time|date:"M d, Y H:i" }}</td>
+                            <td>{{ swap.requested_shift.start_time|date:"M d, Y H:i" }}</td>
+                            <td>
+                                <span class="badge {% if swap.status == 'APPROVED' %}bg-success
+                                                  {% elif swap.status == 'REJECTED' %}bg-danger
+                                                  {% else %}bg-warning{% endif %}">
+                                    {{ swap.status }}
+                                </span>
+                            </td>
+                            <td>
+                                {% if swap.status == 'PENDING' %}
+                                    {% if user.staffprofile.position == 'Manager' %}
+                                    <a href="{% url 'hotel:approve_shift_swap' swap.pk %}" 
+                                       class="btn btn-sm btn-success">Approve</a>
+                                    {% elif swap.requested_shift.staff == user.staffprofile %}
+                                    <button class="btn btn-sm btn-primary accept-swap" 
+                                            data-swap-id="{{ swap.pk }}">Accept</button>
+                                    {% endif %}
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

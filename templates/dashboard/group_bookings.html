@@ -1,0 +1,28 @@
+{% extends 'partials/dashboard_base.html' %}
+{% block dashboard_content %}
+<div class="dashboard-stats">
+    <h4>Group Booking Setup</h4>
+</div>
+
+<div class="dashboard-content-box">
+    <div class="card">
+        <div class="card-header">
+            <h5 class="mb-0">Configure Group Booking</h5>
+        </div>
+        <div class="card-body p-4">
+            <form method="post">
+                {% csrf_token %}
+                <div class="mb-3">
+                    <label class="form-label">Group Size</label>
+                    <input type="number" name="group_size" class="form-control" required autocomplete="off">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Discount Percentage</label>
+                    <input type="number" name="discount" class="form-control" step="0.1" required autocomplete="off">
+                </div>
+                <button type="submit" class="btn btn-primary">Save Configuration</button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %} 

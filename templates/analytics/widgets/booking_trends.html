@@ -1,0 +1,29 @@
+<div class="booking-trends">
+    <canvas id="bookingTrendsChart{{ widget.id }}"></canvas>
+</div>
+
+<script>
+new Chart(document.getElementById('bookingTrendsChart{{ widget.id }}').getContext('2d'), {
+    type: 'line',
+    data: {
+        labels: {{ widget.data.dates|safe }},
+        datasets: [{
+            label: 'Bookings',
+            data: {{ widget.data.counts|safe }},
+            borderColor: '#17a2b8',
+            tension: 0.1
+        }]
+    },
+    options: {
+        responsive: true,
+        scales: {
+            y: {
+                beginAtZero: true,
+                ticks: {
+                    stepSize: 1
+                }
+            }
+        }
+    }
+});
+</script> 

@@ -1,0 +1,78 @@
+{% extends 'partials/dashboard_base.html' %}
+{% load static %}
+
+{% block dashboard_content %}
+<div class="dashboard-content-box">
+    <div class="card">
+        <div class="card-header">
+            <h5 class="mb-0">New Service Request</h5>
+        </div>
+        <div class="card-body">
+            <form method="post">
+                {% csrf_token %}
+                <div class="row">
+                    <div class="col-md-8">
+                        <div class="mb-3">
+                            <label class="form-label">Service Type</label>
+                            {{ form.service_type }}
+                            {% if form.service_type.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.service_type.errors }}
+                            </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Description</label>
+                            {{ form.description }}
+                            <div class="form-text">Please provide specific details about your request</div>
+                            {% if form.description.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.description.errors }}
+                            </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Priority</label>
+                            {{ form.priority }}
+                            {% if form.priority.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.priority.errors }}
+                            </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="text-end">
+                            <a href="{% url 'hotel:room_service_dashboard' %}" class="btn btn-secondary">Cancel</a>
+                            <button type="submit" class="btn btn-primary">Submit Request</button>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-4">
+                        <div class="card bg-light">
+                            <div class="card-body">
+                                <h6>Service Guidelines</h6>
+                                <ul class="list-unstyled mb-0">
+                                    <li class="mb-2">
+                                        <strong>Food Service:</strong>
+                                        <p class="small mb-0">Available 24/7. Please specify any dietary requirements.</p>
+                                    </li>
+                                    <li class="mb-2">
+                                        <strong>Cleaning:</strong>
+                                        <p class="small mb-0">Regular cleaning between 8 AM - 8 PM.</p>
+                                    </li>
+                                    <li>
+                                        <strong>Technical Support:</strong>
+                                        <p class="small mb-0">For any equipment or facility issues.</p>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %} 

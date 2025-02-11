@@ -5,18 +5,25 @@ from django.contrib.auth.decorators import login_required
 from django.views.decorators.csrf import csrf_exempt
 from django.utils import timezone
 from django.conf import settings
-from django.urls import reverse
+from django.urls import reverse, reverse_lazy
 from django.template.loader import render_to_string
 from django.core.mail import EmailMultiAlternatives
+from django.views.generic import ListView, DetailView, CreateView, UpdateView
+from django.db.models import F
+from django.contrib.auth.mixins import LoginRequiredMixin
 
-
-
-from hotel.models import Coupon, CouponUsers, Hotel, Room, Booking, RoomServices, HotelGallery, HotelFeatures, RoomType, Notification, Bookmark, Review
+from hotel.models import Coupon, CouponUsers, Hotel, Room, Booking, RoomServices, HotelGallery, HotelFeatures, RoomType, Notification, Bookmark, Review, InventoryItem, InventoryTransaction, InventoryAlert, StaffProfile, Shift, Attendance, StaffTask, Supplier, SupplierOrder, LeaveRequest, LeaveType, ShiftSwapRequest, OvertimeRecord, PerformanceMetric, PerformanceReview, RoomServiceRequest, RoomServiceFeedback, RoomServiceLog
 
 from datetime import datetime
 from decimal import Decimal
 import stripe
 import json
+from .forms import (SupplierForm, SupplierOrderForm, 
+                   InventoryItemForm, InventoryTransactionForm,
+                   LeaveRequestForm, ShiftSwapRequestForm, OvertimeRecordForm,
+                   PerformanceMetricForm, PerformanceReviewForm,
+                   RoomServiceRequestForm, RoomServiceAssignmentForm, 
+                   RoomServiceFeedbackForm, RoomServiceStatusUpdateForm)
 
 
 def index(request):
@@ -446,3 +453,445 @@ def update_room_status(request):
             
 
     return HttpResponse(today)
+
+class InventoryDashboardView(ListView):
+    model = InventoryItem
+    template_name = 'hotel/inventory_dashboard.html'
+    context_object_name = 'inventory_items'
+
+    def get_queryset(self):
+        return InventoryItem.objects.filter(category__hotel=self.request.user.profile.hotel)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['alerts'] = InventoryAlert.objects.filter(item__category__hotel=self.request.user.profile.hotel, resolved=False)
+        return context
+
+class InventoryDetailView(DetailView):
+    model = InventoryItem
+    template_name = 'hotel/inventory_detail.html'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['transactions'] = InventoryTransaction.objects.filter(item=self.object).order_by('-timestamp')
+        return context
+
+def resolve_inventory_alert(request, alert_id):
+    alert = get_object_or_404(InventoryAlert, id=alert_id)
+    alert.resolved = True
+    alert.save()
+    return redirect('hotel:inventory_dashboard')
+
+class StaffDashboardView(ListView):
+    model = StaffProfile
+    template_name = 'hotel/staff_dashboard.html'
+    
+    def get_queryset(self):
+        return StaffProfile.objects.filter(hotel=self.request.user.profile.hotel)
+
+class StaffDetailView(DetailView):
+    model = StaffProfile
+    template_name = 'hotel/staff_detail.html'
+
+class ShiftCreateView(CreateView):
+    model = Shift
+    fields = ['staff', 'start_time', 'end_time', 'notes']
+    template_name = 'hotel/shift_form.html'
+    
+    def form_valid(self, form):
+        form.instance.created_by = self.request.user
+        return super().form_valid(form)
+
+@login_required
+def clock_in_out(request):
+    if request.method == 'POST':
+        staff_profile = request.user.staffprofile
+        today = timezone.now().date()
+        
+        try:
+            attendance = Attendance.objects.get(staff=staff_profile, date=today)
+            if not attendance.clock_out:
+                attendance.clock_out = timezone.now().time()
+                attendance.save()
+                messages.success(request, "Clocked out successfully")
+        except Attendance.DoesNotExist:
+            Attendance.objects.create(
+                staff=staff_profile,
+                date=today,
+                clock_in=timezone.now().time(),
+                status='PRESENT'
+            )
+            messages.success(request, "Clocked in successfully")
+            
+        return redirect('staff_dashboard')
+
+@login_required
+def supplier_list(request):
+    suppliers = Supplier.objects.all()
+    context = {
+        'suppliers': suppliers,
+        'active_suppliers': suppliers.filter(active=True).count(),
+        'total_orders': SupplierOrder.objects.count()
+    }
+    return render(request, 'hotel/supplier/list.html', context)
+
+@login_required
+def supplier_detail(request, pk):
+    supplier = get_object_or_404(Supplier, pk=pk)
+    orders = SupplierOrder.objects.filter(supplier=supplier)
+    context = {
+        'supplier': supplier,
+        'orders': orders,
+        'performance_metrics': {
+            'on_time_delivery': f"{supplier.on_time_delivery_rate * 100:.1f}%",
+            'quality_rating': f"{supplier.quality_rating:.1f}/5",
+            'total_orders': supplier.total_orders
+        }
+    }
+    return render(request, 'hotel/supplier/detail.html', context)
+
+@login_required
+def supplier_create(request):
+    if request.method == 'POST':
+        form = SupplierForm(request.POST)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Supplier created successfully.')
+            return redirect('supplier_list')
+    else:
+        form = SupplierForm()
+    return render(request, 'hotel/supplier/form.html', {'form': form})
+
+@login_required
+def inventory_dashboard(request):
+    items = InventoryItem.objects.all()
+    alerts = InventoryAlert.objects.filter(resolved=False)
+    context = {
+        'items': items,
+        'alerts': alerts,
+        'low_stock_count': items.filter(current_stock__lte=F('minimum_stock')).count(),
+        'total_value': sum(item.current_stock * item.unit_price for item in items)
+    }
+    return render(request, 'hotel/inventory/dashboard.html', context)
+
+@login_required
+def inventory_transaction(request, pk):
+    item = get_object_or_404(InventoryItem, pk=pk)
+    if request.method == 'POST':
+        form = InventoryTransactionForm(request.POST)
+        if form.is_valid():
+            transaction = form.save(commit=False)
+            transaction.item = item
+            transaction.performed_by = request.user
+            transaction.save()
+            messages.success(request, 'Transaction recorded successfully.')
+            return redirect('inventory_dashboard')
+    else:
+        form = InventoryTransactionForm()
+    
+    context = {
+        'form': form,
+        'item': item,
+        'recent_transactions': InventoryTransaction.objects.filter(
+            item=item
+        ).order_by('-transaction_date')[:5]
+    }
+    return render(request, 'hotel/inventory/transaction.html', context)
+
+@login_required
+def inventory_detail(request, pk):
+    item = get_object_or_404(InventoryItem, pk=pk)
+    transactions = InventoryTransaction.objects.filter(item=item).order_by('-transaction_date')[:10]
+    context = {
+        'item': item,
+        'transactions': transactions
+    }
+    return render(request, 'hotel/inventory/detail.html', context)
+
+@login_required
+def inventory_create(request):
+    if request.method == 'POST':
+        form = InventoryItemForm(request.POST)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Inventory item created successfully.')
+            return redirect('hotel:inventory_dashboard')
+    else:
+        form = InventoryItemForm()
+    return render(request, 'hotel/inventory/form.html', {'form': form})
+
+@login_required
+def resolve_alert(request, alert_id):
+    alert = get_object_or_404(InventoryAlert, id=alert_id)
+    alert.resolved = True
+    alert.save()
+    messages.success(request, 'Alert marked as resolved.')
+    return redirect('hotel:inventory_dashboard')
+
+class LeaveRequestListView(LoginRequiredMixin, ListView):
+    model = LeaveRequest
+    template_name = 'hotel/staff/leave_requests.html'
+    context_object_name = 'leave_requests'
+    
+    def get_queryset(self):
+        if self.request.user.staffprofile.position == 'Manager':
+            return LeaveRequest.objects.filter(staff__department=self.request.user.staffprofile.department)
+        return LeaveRequest.objects.filter(staff=self.request.user.staffprofile)
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        if hasattr(self.request.user, 'staffprofile'):
+            context['leave_balance'] = {
+                leave_type: leave_type.max_days_per_year - self.request.user.staffprofile.get_used_leave_days(leave_type)
+                for leave_type in LeaveType.objects.all()
+            }
+        return context
+
+class LeaveRequestCreateView(LoginRequiredMixin, CreateView):
+    model = LeaveRequest
+    form_class = LeaveRequestForm
+    template_name = 'hotel/staff/leave_request_form.html'
+    success_url = reverse_lazy('hotel:leave_requests')
+    
+    def form_valid(self, form):
+        form.instance.staff = self.request.user.staffprofile
+        return super().form_valid(form)
+
+class ShiftSwapListView(LoginRequiredMixin, ListView):
+    model = ShiftSwapRequest
+    template_name = 'hotel/staff/shift_swaps.html'
+    context_object_name = 'swap_requests'
+    
+    def get_queryset(self):
+        return ShiftSwapRequest.objects.filter(
+            models.Q(requester_shift__staff=self.request.user.staffprofile) |
+            models.Q(requested_shift__staff=self.request.user.staffprofile)
+        )
+
+class ShiftSwapCreateView(LoginRequiredMixin, CreateView):
+    model = ShiftSwapRequest
+    form_class = ShiftSwapRequestForm
+    template_name = 'hotel/staff/shift_swap_form.html'
+    success_url = reverse_lazy('hotel:shift_swaps')
+    
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs['user'] = self.request.user
+        return kwargs
+    
+    def form_valid(self, form):
+        form.instance.requester_shift = self.request.user.staffprofile.shift_set.get(
+            id=self.kwargs['shift_id']
+        )
+        return super().form_valid(form)
+
+class OvertimeRecordListView(LoginRequiredMixin, ListView):
+    model = OvertimeRecord
+    template_name = 'hotel/staff/overtime_records.html'
+    context_object_name = 'overtime_records'
+    
+    def get_queryset(self):
+        if self.request.user.staffprofile.position == 'Manager':
+            return OvertimeRecord.objects.filter(staff__department=self.request.user.staffprofile.department)
+        return OvertimeRecord.objects.filter(staff=self.request.user.staffprofile)
+
+class OvertimeRecordCreateView(LoginRequiredMixin, CreateView):
+    model = OvertimeRecord
+    form_class = OvertimeRecordForm
+    template_name = 'hotel/staff/overtime_form.html'
+    success_url = reverse_lazy('hotel:overtime_records')
+    
+    def form_valid(self, form):
+        form.instance.staff = self.request.user.staffprofile
+        return super().form_valid(form)
+
+class PerformanceMetricListView(LoginRequiredMixin, ListView):
+    model = PerformanceMetric
+    template_name = 'hotel/staff/performance_metrics.html'
+    context_object_name = 'metrics'
+    
+    def get_queryset(self):
+        return PerformanceMetric.objects.filter(staff=self.request.user.staffprofile)
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['performance_score'] = self.request.user.staffprofile.get_performance_score()
+        return context
+
+class PerformanceReviewDetailView(LoginRequiredMixin, DetailView):
+    model = PerformanceReview
+    template_name = 'hotel/staff/performance_review.html'
+    context_object_name = 'review'
+
+@login_required
+def approve_leave_request(request, pk):
+    leave_request = get_object_or_404(LeaveRequest, pk=pk)
+    if request.user.staffprofile.position == 'Manager':
+        leave_request.status = 'APPROVED'
+        leave_request.approved_by = request.user.staffprofile
+        leave_request.save()
+        messages.success(request, 'Leave request approved successfully.')
+    return redirect('hotel:leave_requests')
+
+@login_required
+def approve_shift_swap(request, pk):
+    swap_request = get_object_or_404(ShiftSwapRequest, pk=pk)
+    if request.user.staffprofile.position == 'Manager':
+        with transaction.atomic():
+            # Swap the shifts
+            requester_shift = swap_request.requester_shift
+            requested_shift = swap_request.requested_shift
+            
+            temp_staff = requester_shift.staff
+            requester_shift.staff = requested_shift.staff
+            requested_shift.staff = temp_staff
+            
+            requester_shift.save()
+            requested_shift.save()
+            
+            swap_request.status = 'APPROVED'
+            swap_request.approved_by = request.user.staffprofile
+            swap_request.save()
+            
+            messages.success(request, 'Shift swap approved successfully.')
+    return redirect('hotel:shift_swaps')
+
+@login_required
+def approve_overtime(request, pk):
+    overtime = get_object_or_404(OvertimeRecord, pk=pk)
+    if request.user.staffprofile.position == 'Manager':
+        overtime.approved = True
+        overtime.approved_by = request.user.staffprofile
+        overtime.save()
+        messages.success(request, 'Overtime approved successfully.')
+    return redirect('hotel:overtime_records')
+
+@login_required
+def room_service_dashboard(request):
+    context = {
+        'pending_requests': RoomServiceRequest.objects.filter(status='PENDING'),
+        'in_progress': RoomServiceRequest.objects.filter(status='IN_PROGRESS'),
+        'my_tasks': RoomServiceRequest.objects.filter(
+            assigned_to=request.user.staffprofile,
+            status__in=['ASSIGNED', 'IN_PROGRESS']
+        )
+    }
+    return render(request, 'hotel/room_service/dashboard.html', context)
+
+@login_required
+def create_service_request(request):
+    if request.method == 'POST':
+        form = RoomServiceRequestForm(request.POST)
+        if form.is_valid():
+            service = form.save(commit=False)
+            service.booking = request.user.current_booking  # You'll need to implement this
+            service.room_number = request.user.current_booking.room.room_number
+            service.guest_name = request.user.get_full_name()
+            service.save()
+            
+            # Create initial log entry
+            RoomServiceLog.objects.create(
+                service_request=service,
+                status='PENDING',
+                notes='Service request created',
+                logged_by=request.user
+            )
+            
+            messages.success(request, 'Service request submitted successfully')
+            return redirect('hotel:service_request_detail', pk=service.pk)
+    else:
+        form = RoomServiceRequestForm()
+    
+    return render(request, 'hotel/room_service/request_form.html', {'form': form})
+
+@login_required
+def service_request_detail(request, pk):
+    service = get_object_or_404(RoomServiceRequest, pk=pk)
+    logs = service.roomservicelog_set.all()
+    
+    if request.method == 'POST':
+        status_form = RoomServiceStatusUpdateForm(request.POST)
+        if status_form.is_valid():
+            new_status = status_form.cleaned_data['status']
+            notes = status_form.cleaned_data['notes']
+            
+            service.status = new_status
+            if new_status == 'COMPLETED':
+                service.completed_at = timezone.now()
+            service.save()
+            
+            RoomServiceLog.objects.create(
+                service_request=service,
+                status=new_status,
+                notes=notes,
+                logged_by=request.user
+            )
+            
+            messages.success(request, 'Status updated successfully')
+            return redirect('hotel:service_request_detail', pk=pk)
+    else:
+        status_form = RoomServiceStatusUpdateForm(initial={'status': service.status})
+    
+    context = {
+        'service': service,
+        'logs': logs,
+        'status_form': status_form
+    }
+    return render(request, 'hotel/room_service/request_detail.html', context)
+
+@login_required
+def assign_service_request(request, pk):
+    service = get_object_or_404(RoomServiceRequest, pk=pk)
+    
+    if request.method == 'POST':
+        form = RoomServiceAssignmentForm(request.POST, instance=service)
+        if form.is_valid():
+            service = form.save(commit=False)
+            service.status = 'ASSIGNED'
+            service.save()
+            
+            RoomServiceLog.objects.create(
+                service_request=service,
+                status='ASSIGNED',
+                notes=f'Assigned to {service.assigned_to.user.get_full_name()}',
+                logged_by=request.user
+            )
+            
+            messages.success(request, 'Service request assigned successfully')
+            return redirect('hotel:service_request_detail', pk=pk)
+    else:
+        form = RoomServiceAssignmentForm(instance=service)
+    
+    return render(request, 'hotel/room_service/assign_form.html', {'form': form, 'service': service})
+
+@login_required
+def submit_service_feedback(request, pk):
+    service = get_object_or_404(RoomServiceRequest, pk=pk)
+    
+    if request.method == 'POST':
+        form = RoomServiceFeedbackForm(request.POST)
+        if form.is_valid():
+            feedback = form.save(commit=False)
+            feedback.service_request = service
+            feedback.save()
+            
+            messages.success(request, 'Thank you for your feedback!')
+            return redirect('hotel:service_request_detail', pk=pk)
+    else:
+        form = RoomServiceFeedbackForm()
+    
+    return render(request, 'hotel/room_service/feedback_form.html', {
+        'form': form,
+        'service': service
+    })
+
+@login_required
+def get_service_status(request, pk):
+    """AJAX endpoint for real-time status updates"""
+    service = get_object_or_404(RoomServiceRequest, pk=pk)
+    return JsonResponse({
+        'status': service.status,
+        'assigned_to': service.assigned_to.user.get_full_name() if service.assigned_to else None,
+        'updated_at': service.roomservicelog_set.latest('timestamp').timestamp.isoformat(),
+        'estimated_duration': str(service.estimated_duration) if service.estimated_duration else None
+    })

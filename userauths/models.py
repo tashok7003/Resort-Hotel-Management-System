@@ -4,6 +4,8 @@ from django.db.models.signals import post_save
 from django.utils.html import mark_safe
 from django_ckeditor_5.fields import CKEditor5Field
 from django.dispatch import receiver
+from django.utils import timezone
+from dateutil.relativedelta import relativedelta
 
 
 from PIL import Image
@@ -73,6 +75,7 @@ class Profile(models.Model):
     wallet = models.DecimalField(decimal_places=2, max_digits=12, default=0.00)
     verified = models.BooleanField(default=False)
     date = models.DateTimeField(auto_now_add=True, null=True, blank=True)
+    birth_date = models.DateField(null=True, blank=True)
 
     class Meta:
         ordering = ["-date"]
@@ -91,6 +94,13 @@ class Profile(models.Model):
     
     def thumbnail(self):
         return mark_safe('<img src="/media/%s" width="50" height="50" object-fit:"cover" />' % (self.image))
+
+    @property
+    def age(self):
+        if self.birth_date:
+            today = timezone.now().date()
+            return relativedelta(today, self.birth_date).years
+        return None
 
     
     

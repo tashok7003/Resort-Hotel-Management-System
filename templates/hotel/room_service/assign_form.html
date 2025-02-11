@@ -1,0 +1,148 @@
+{% extends 'partials/dashboard_base.html' %}
+{% load static %}
+
+{% block dashboard_content %}
+<div class="dashboard-content-box">
+    <div class="card">
+        <div class="card-header">
+            <h5 class="mb-0">Assign Staff to Service Request</h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-8">
+                    <!-- Service Request Info -->
+                    <div class="card bg-light mb-4">
+                        <div class="card-body">
+                            <h6>Request Details</h6>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <p><strong>Room:</strong> {{ service.room_number }}</p>
+                                    <p><strong>Guest:</strong> {{ service.guest_name }}</p>
+                                    <p><strong>Service Type:</strong> {{ service.get_service_type_display }}</p>
+                                </div>
+                                <div class="col-md-6">
+                                    <p>
+                                        <strong>Priority:</strong>
+                                        <span class="badge {% if service.priority == 'URGENT' %}bg-danger
+                                                          {% elif service.priority == 'HIGH' %}bg-warning
+                                                          {% else %}bg-info{% endif %}">
+                                            {{ service.get_priority_display }}
+                                        </span>
+                                    </p>
+                                    <p><strong>Requested:</strong> {{ service.requested_at|timesince }} ago</p>
+                                </div>
+                            </div>
+                            <p><strong>Description:</strong> {{ service.description }}</p>
+                        </div>
+                    </div>
+
+                    <!-- Assignment Form -->
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label class="form-label">Assign To Staff Member</label>
+                            {{ form.assigned_to }}
+                            {% if form.assigned_to.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.assigned_to.errors }}
+                            </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Estimated Duration</label>
+                            {{ form.estimated_duration }}
+                            <div class="form-text">Format: HH:MM:SS</div>
+                            {% if form.estimated_duration.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.estimated_duration.errors }}
+                            </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="text-end">
+                            <a href="{% url 'hotel:service_request_detail' service.pk %}" class="btn btn-secondary">Cancel</a>
+                            <button type="submit" class="btn btn-primary">Assign Staff</button>
+                        </div>
+                    </form>
+                </div>
+
+                <div class="col-md-4">
+                    <!-- Staff Availability -->
+                    <div class="card">
+                        <div class="card-body">
+                            <h6>Staff Availability</h6>
+                            <div class="staff-list">
+                                {% for staff in available_staff %}
+                                <div class="staff-item mb-3">
+                                    <div class="d-flex align-items-center">
+                                        <div class="staff-status {% if staff.is_available %}bg-success{% else %}bg-warning{% endif %}"></div>
+                                        <div class="ms-2">
+                                            <h6 class="mb-0">{{ staff.user.get_full_name }}</h6>
+                                            <small class="text-muted">{{ staff.position }}</small>
+                                        </div>
+                                    </div>
+                                    {% if not staff.is_available %}
+                                    <small class="text-muted d-block mt-1">Available in: {{ staff.next_available|timeuntil }}</small>
+                                    {% endif %}
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block extra_css %}
+<style>
+.staff-status {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+}
+
+.staff-item {
+    padding: 10px;
+    border-radius: 4px;
+    background: #f8f9fa;
+}
+
+.staff-item:hover {
+    background: #e9ecef;
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Update staff availability in real-time
+    function updateStaffAvailability() {
+        fetch('{% url "hotel:get_staff_availability" %}')
+            .then(response => response.json())
+            .then(data => {
+                // Update the staff list with new availability data
+                data.forEach(staff => {
+                    const staffElement = document.querySelector(`[data-staff-id="${staff.id}"]`);
+                    if (staffElement) {
+                        const statusDot = staffElement.querySelector('.staff-status');
+                        const availabilityText = staffElement.querySelector('.availability-text');
+                        
+                        statusDot.className = `staff-status ${staff.is_available ? 'bg-success' : 'bg-warning'}`;
+                        if (!staff.is_available) {
+                            availabilityText.textContent = `Available in: ${staff.next_available}`;
+                        }
+                    }
+                });
+            });
+    }
+
+    // Update every minute
+    setInterval(updateStaffAvailability, 60000);
+});
+</script>
+{% endblock %}
+{% endblock %} 

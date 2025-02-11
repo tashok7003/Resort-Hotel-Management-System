@@ -1,0 +1,82 @@
+{% extends 'partials/dashboard_base.html' %}
+{% load static %}
+{% load analytics_extras %}
+
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-body">
+                <h6>Revenue Summary</h6>
+                <h3>${{ report.data.total_revenue|floatformat:2 }}</h3>
+                <canvas id="revenueChart"></canvas>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-body">
+                <h6>Revenue by Room Type</h6>
+                <canvas id="roomTypeChart"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="table-responsive">
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Room Type</th>
+                <th>Total Revenue</th>
+                <th>Bookings</th>
+                <th>Average Revenue per Booking</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in report.data.revenue_by_room_type %}
+            <tr>
+                <td>{{ item.room_type__type }}</td>
+                <td>${{ item.total|floatformat:2 }}</td>
+                <td>{{ item.count }}</td>
+                <td>${{ item.total|divide:item.count|floatformat:2 }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<script>
+// Revenue trend chart
+new Chart(document.getElementById('revenueChart').getContext('2d'), {
+    type: 'line',
+    data: {
+        labels: {{ report.data.daily_revenue|safe }},
+        datasets: [{
+            label: 'Daily Revenue',
+            data: {{ report.data.daily_revenue|safe }},
+            borderColor: '#007bff',
+            tension: 0.1
+        }]
+    },
+    options: {
+        responsive: true,
+        scales: {
+            y: {
+                beginAtZero: true
+            }
+        }
+    }
+});
+
+// Room type revenue distribution
+new Chart(document.getElementById('roomTypeChart').getContext('2d'), {
+    type: 'pie',
+    data: {
+        labels: {{ report.data.revenue_by_room_type|map_attr:'room_type__type'|safe }},
+        datasets: [{
+            data: {{ report.data.revenue_by_room_type|map_attr:'total'|safe }},
+            backgroundColor: ['#007bff', '#28a745', '#ffc107', '#dc3545']
+        }]
+    }
+});
+</script> 

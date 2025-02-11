@@ -11,10 +11,15 @@ class UserRegisterForm(UserCreationForm):
     email = forms.EmailField(widget=forms.TextInput(attrs={'class': '' , 'id': "", 'placeholder':'Email Address'}), required=True)
     password1 = forms.CharField(widget=forms.PasswordInput(attrs={'id': "", 'placeholder':'Password'}), required=True)
     password2 = forms.CharField(widget=forms.PasswordInput(attrs={'id': "", 'placeholder':'Confirm Password'}), required=True)
+    birth_date = forms.DateField(
+        widget=forms.DateInput(attrs={'type': 'date'}),
+        required=True,
+        label='Date of Birth'
+    )
 
     class Meta:
         model = User
-        fields = ['full_name', 'username', 'email', 'password1', 'password2']
+        fields = ['full_name', 'username', 'email', 'password1', 'password2', 'birth_date']
 
 
     def __init__(self, *args, **kwargs):
@@ -31,23 +36,14 @@ class UserUpdateForm(forms.ModelForm):
 
 
 class ProfileUpdateForm(forms.ModelForm):
+    birth_date = forms.DateField(
+        widget=forms.DateInput(attrs={'type': 'date'}),
+        required=False
+    )
     
     class Meta:
         model = Profile
-        fields = [
-            'image',
-            'full_name', 
-            'phone',
-            'gender',
-            'country',
-            'city',
-            'state',
-            'address',
-            'identity_type',
-            'identity_image',
-            'facebook',
-            'twitter',
-        ]
+        fields = ['birth_date', 'image', 'gender', 'phone', 'address', 'city', 'state', 'country']
         widgets = {
             'image': FileInput(attrs={'onchange': 'loadFile(event)', 'class':'upload'}),
         }

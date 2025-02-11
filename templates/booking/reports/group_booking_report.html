@@ -1,0 +1,110 @@
+{% extends 'partials/dashboard_base.html' %}
+{% load static %}
+
+{% block dashboard_content %}
+<div class="dashboard-content-box">
+    <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">Group Booking Report: {{ report.booking_details.group_name }}</h5>
+            <div>
+                <button class="btn btn-primary" onclick="window.print()">
+                    <i class="fas fa-print"></i> Print Report
+                </button>
+            </div>
+        </div>
+        <div class="card-body">
+            <!-- Booking Details -->
+            <div class="row mb-4">
+                <div class="col-md-6">
+                    <h6>Group Details</h6>
+                    <table class="table">
+                        <tr>
+                            <th>Group Type</th>
+                            <td>{{ report.booking_details.group_type }}</td>
+                        </tr>
+                        <tr>
+                            <th>Total Members</th>
+                            <td>{{ report.booking_details.total_members }}</td>
+                        </tr>
+                        <tr>
+                            <th>Check-in</th>
+                            <td>{{ report.booking_details.check_in }}</td>
+                        </tr>
+                        <tr>
+                            <th>Check-out</th>
+                            <td>{{ report.booking_details.check_out }}</td>
+                        </tr>
+                    </table>
+                </div>
+                <div class="col-md-6">
+                    <h6>Financial Summary</h6>
+                    <table class="table">
+                        <tr>
+                            <th>Total Amount</th>
+                            <td>${{ report.financial_details.total_amount }}</td>
+                        </tr>
+                        <tr>
+                            <th>Amount Paid</th>
+                            <td>${{ report.financial_details.amount_paid }}</td>
+                        </tr>
+                        <tr>
+                            <th>Remaining Amount</th>
+                            <td>${{ report.financial_details.remaining_amount }}</td>
+                        </tr>
+                        <tr>
+                            <th>Discount Applied</th>
+                            <td>{{ report.financial_details.discount_applied }}%</td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Room Allocation -->
+            <h6>Room Allocation</h6>
+            <div class="table-responsive mb-4">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Room Type</th>
+                            <th>Count</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for room_type in report.room_allocation.room_types %}
+                        <tr>
+                            <td>{{ room_type.room__room_type__type }}</td>
+                            <td>{{ room_type.count }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Payment History -->
+            <h6>Payment History</h6>
+            <div class="table-responsive">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Amount</th>
+                            <th>Method</th>
+                            <th>Paid By</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for payment in report.payment_history %}
+                        <tr>
+                            <td>{{ payment.payment_date|date:"M d, Y" }}</td>
+                            <td>${{ payment.amount }}</td>
+                            <td>{{ payment.payment_method }}</td>
+                            <td>{{ payment.paid_by__name|default:"Group Leader" }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

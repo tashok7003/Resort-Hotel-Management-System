@@ -30,6 +30,9 @@ urlpatterns = [
     # Ckeditor
     path("ckeditor5/", include('django_ckeditor_5.urls')),
 
+    # Analytics
+    path('analytics/', include('analytics.urls')),
+
 ]
 
 

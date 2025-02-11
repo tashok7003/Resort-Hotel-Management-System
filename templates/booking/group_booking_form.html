@@ -1,0 +1,103 @@
+{% extends 'partials/dashboard_base.html' %}
+{% load static %}
+
+{% block dashboard_content %}
+<div class="dashboard-content-box">
+    <div class="card">
+        <div class="card-header">
+            <h5 class="mb-0">Create Group Booking</h5>
+        </div>
+        <div class="card-body">
+            <form method="post">
+                {% csrf_token %}
+                
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <h6>Group Details</h6>
+                        {{ form.as_p }}
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <h6>Price Breakdown</h6>
+                        <div class="price-calculator">
+                            <div class="base-price">
+                                <span>Base Price per Person:</span>
+                                <span class="amount">$<span id="basePrice">0</span></span>
+                            </div>
+                            <div class="group-discount">
+                                <span>Group Discount:</span>
+                                <span class="amount">-$<span id="discountAmount">0</span></span>
+                            </div>
+                            <div class="final-price">
+                                <span>Final Price per Person:</span>
+                                <span class="amount">$<span id="finalPrice">0</span></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <h6>Group Members</h6>
+                <div class="member-formset">
+                    {{ member_formset.management_form }}
+                    <div id="member-forms">
+                        {% for member_form in member_formset %}
+                            <div class="member-form mb-3">
+                                {{ member_form.as_p }}
+                            </div>
+                        {% endfor %}
+                    </div>
+                    <button type="button" class="btn btn-secondary" id="add-member">
+                        Add Member
+                    </button>
+                </div>
+
+                <div class="text-end mt-4">
+                    <button type="submit" class="btn btn-primary">Create Booking</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    // Dynamic price calculation
+    $('#id_group_size, #id_group_type').change(function() {
+        updatePriceCalculation();
+    });
+
+    function updatePriceCalculation() {
+        const groupSize = $('#id_group_size').val();
+        const groupType = $('#id_group_type').val();
+        
+        $.ajax({
+            url: '{% url "booking:calculate_group_price" %}',
+            data: {
+                group_size: groupSize,
+                group_type: groupType
+            },
+            success: function(response) {
+                $('#basePrice').text(response.base_price);
+                $('#discountAmount').text(response.discount_amount);
+                $('#finalPrice').text(response.final_price);
+            }
+        });
+    }
+
+    // Handle dynamic member forms
+    let memberFormCount = {{ member_formset.total_form_count }};
+    
+    $('#add-member').click(function() {
+        const empty_form = $('#empty-form').html();
+        const new_form = empty_form.replace(/__prefix__/g, memberFormCount);
+        $('#member-forms').append(new_form);
+        memberFormCount++;
+        
+        // Update total forms count
+        $('#id_form-TOTAL_FORMS').val(memberFormCount);
+    });
+});
+</script>
+{% endblock %}
+{% endblock %} 

@@ -1,0 +1,99 @@
+{% extends 'partials/dashboard_base.html' %}
+{% load static %}
+
+{% block dashboard_content %}
+<div class="dashboard-content-box">
+    <div class="card">
+        <div class="card-header">
+            <h5 class="mb-0">{% if form.instance.pk %}Edit{% else %}Create New{% endif %} Performance Review</h5>
+        </div>
+        <div class="card-body">
+            <form method="post">
+                {% csrf_token %}
+                <div class="row">
+                    <div class="col-md-8">
+                        <div class="mb-3">
+                            <label class="form-label">Overall Rating</label>
+                            <div class="rating-input">
+                                {{ form.rating }}
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Comments</label>
+                            {{ form.comments }}
+                            <div class="form-text">Provide detailed feedback about performance</div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Goals Set</label>
+                            {{ form.goals_set }}
+                            <div class="form-text">Set specific, measurable goals for the next period</div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Next Review Date</label>
+                            {{ form.next_review_date }}
+                        </div>
+                        <div class="text-end">
+                            <a href="{% url 'hotel:performance_review' staff_id %}" class="btn btn-secondary">Cancel</a>
+                            <button type="submit" class="btn btn-primary">Save Review</button>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card bg-light mb-3">
+                            <div class="card-body">
+                                <h6>Staff Information</h6>
+                                <p><strong>Name:</strong> {{ staff.user.get_full_name }}</p>
+                                <p><strong>Position:</strong> {{ staff.position }}</p>
+                                <p><strong>Department:</strong> {{ staff.department.name }}</p>
+                            </div>
+                        </div>
+                        <div class="card bg-light">
+                            <div class="card-body">
+                                <h6>Recent Metrics</h6>
+                                {% for metric in recent_metrics %}
+                                <div class="mb-2">
+                                    <small>{{ metric.get_metric_type_display }}</small>
+                                    <div class="progress">
+                                        <div class="progress-bar" role="progressbar" 
+                                             style="width: {{ metric.value|multiply:20 }}%">
+                                            {{ metric.value }}/5
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize star rating input
+    const ratingInput = document.querySelector('input[name="rating"]');
+    const stars = document.querySelectorAll('.rating-star');
+    
+    stars.forEach((star, index) => {
+        star.addEventListener('click', () => {
+            ratingInput.value = index + 1;
+            updateStars(index + 1);
+        });
+    });
+    
+    function updateStars(rating) {
+        stars.forEach((star, index) => {
+            star.classList.toggle('active', index < rating);
+        });
+    }
+    
+    // Initialize with current value if editing
+    if (ratingInput.value) {
+        updateStars(parseInt(ratingInput.value));
+    }
+});
+</script>
+{% endblock %}
+{% endblock %} 

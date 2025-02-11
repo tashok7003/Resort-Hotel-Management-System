@@ -1,0 +1,195 @@
+{% extends 'partials/dashboard_base.html' %}
+{% load static %}
+
+{% block dashboard_content %}
+<div class="dashboard-content-box">
+    <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">Analytics Dashboard</h5>
+            <div>
+                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#reportModal">
+                    <i class="fas fa-file-alt"></i> Generate Report
+                </button>
+                <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#exportModal">
+                    <i class="fas fa-download"></i> Export Data
+                </button>
+            </div>
+        </div>
+        <div class="card-body">
+            <!-- Quick Stats -->
+            <div class="row mb-4">
+                <div class="col-md-4">
+                    <div class="card bg-primary text-white">
+                        <div class="card-body">
+                            <h6>Revenue (30 Days)</h6>
+                            <h3>${{ quick_stats.revenue.total_revenue|floatformat:2 }}</h3>
+                            <small>{{ quick_stats.revenue.daily_revenue|length }} transactions</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card bg-success text-white">
+                        <div class="card-body">
+                            <h6>Occupancy Rate</h6>
+                            <h3>{{ quick_stats.occupancy.overall_occupancy|floatformat:1 }}%</h3>
+                            <small>Average over last 30 days</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card bg-info text-white">
+                        <div class="card-body">
+                            <h6>Bookings</h6>
+                            <h3>{{ quick_stats.bookings.total_bookings }}</h3>
+                            <small>Last 30 days</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Widgets Grid -->
+            <div class="row" id="widgets-container">
+                {% for widget in widgets %}
+                <div class="col-md-6 mb-4" data-widget-id="{{ widget.id }}">
+                    <div class="card">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <h6 class="mb-0">{{ widget.name }}</h6>
+                            <div class="dropdown">
+                                <button class="btn btn-sm btn-link" data-bs-toggle="dropdown">
+                                    <i class="fas fa-ellipsis-v"></i>
+                                </button>
+                                <div class="dropdown-menu">
+                                    <a href="{% url 'analytics:widget_settings' widget.id %}" class="dropdown-item">
+                                        Settings
+                                    </a>
+                                    <a href="#" class="dropdown-item text-danger widget-remove">
+                                        Remove
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            {% if widget.widget_type == 'REVENUE_CHART' %}
+                                <canvas id="revenueChart{{ widget.id }}"></canvas>
+                            {% elif widget.widget_type == 'OCCUPANCY_CHART' %}
+                                <canvas id="occupancyChart{{ widget.id }}"></canvas>
+                            {% elif widget.widget_type == 'PERFORMANCE_METRICS' %}
+                                {% include 'analytics/widgets/performance_metrics.html' %}
+                            {% else %}
+                                {% include 'analytics/widgets/booking_trends.html' %}
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Report Modal -->
+<div class="modal fade" id="reportModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Generate Report</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="post" action="{% url 'analytics:generate_report' %}">
+                <div class="modal-body">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label class="form-label">Report Type</label>
+                        <select name="report_type" class="form-select">
+                            <option value="REVENUE">Revenue Analysis</option>
+                            <option value="OCCUPANCY">Occupancy Analysis</option>
+                            <option value="PERFORMANCE">Performance Metrics</option>
+                        </select>
+                    </div>
+                    {{ date_range_form.as_p }}
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="submit" class="btn btn-primary">Generate</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Export Modal -->
+<div class="modal fade" id="exportModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Export Data</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="post" action="{% url 'analytics:export_report' %}">
+                <div class="modal-body">
+                    {% csrf_token %}
+                    {{ export_form.as_p }}
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="submit" class="btn btn-success">Export</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
+<script>
+// Initialize draggable widgets
+new Sortable(document.getElementById('widgets-container'), {
+    animation: 150,
+    onEnd: function(evt) {
+        const widgetId = evt.item.dataset.widgetId;
+        const newPosition = evt.newIndex;
+        
+        // Update widget position via AJAX
+        fetch('{% url "analytics:update_widget_position" %}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'X-CSRFToken': '{{ csrf_token }}'
+            },
+            body: `widget_id=${widgetId}&position=${newPosition}`
+        });
+    }
+});
+
+// Initialize charts for each widget
+{% for widget in widgets %}
+    {% if widget.widget_type == 'REVENUE_CHART' %}
+        new Chart(document.getElementById('revenueChart{{ widget.id }}').getContext('2d'), {
+            type: 'line',
+            data: {
+                labels: {{ quick_stats.revenue.daily_revenue|safe }},
+                datasets: [{
+                    label: 'Daily Revenue',
+                    data: {{ quick_stats.revenue.daily_revenue|safe }},
+                    borderColor: '#007bff'
+                }]
+            }
+        });
+    {% elif widget.widget_type == 'OCCUPANCY_CHART' %}
+        new Chart(document.getElementById('occupancyChart{{ widget.id }}').getContext('2d'), {
+            type: 'bar',
+            data: {
+                labels: {{ quick_stats.occupancy.daily_occupancy|safe }},
+                datasets: [{
+                    label: 'Daily Occupancy Rate',
+                    data: {{ quick_stats.occupancy.daily_occupancy|safe }},
+                    backgroundColor: '#28a745'
+                }]
+            }
+        });
+    {% endif %}
+{% endfor %}
+</script>
+{% endblock %}
+{% endblock %} 

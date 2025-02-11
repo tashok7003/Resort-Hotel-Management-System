@@ -1,0 +1,40 @@
+{% extends 'partials/dashboard_base.html' %}
+{% block content %}
+{% include 'partials/dashboard_sidebar.html' %}
+<div class="utf_dashboard_content">
+    <div class="container">
+        <h4>Available Packages</h4>
+        <div class="row">
+            {% for package in packages %}
+            <div class="col-md-4 mb-4">
+                <div class="card package-card">
+                    <div class="card-header">
+                        <h5>{{ package.name }}</h5>
+                    </div>
+                    <div class="card-body">
+                        <p class="text-success">Save {{ package.discount }}%</p>
+                        <p>{{ package.description }}</p>
+                        <div class="mb-3">
+                            <h6>Includes:</h6>
+                            <ul>
+                                {% for room_type in package.included_room_types.all %}
+                                <li>{{ room_type.name }}</li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                        <button class="btn btn-primary btn-block" data-toggle="modal" 
+                                data-target="#packageModal{{ package.id }}">
+                            View Details
+                        </button>
+                    </div>
+                </div>
+            </div>
+            {% empty %}
+            <div class="col-12">
+                <div class="alert alert-info">No packages available at the moment.</div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endblock %}

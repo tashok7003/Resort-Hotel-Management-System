@@ -1,0 +1,11 @@
+README.md
+setup.cfg
+setup.py
+django_plaintext_password.egg-info/PKG-INFO
+django_plaintext_password.egg-info/SOURCES.txt
+django_plaintext_password.egg-info/dependency_links.txt
+django_plaintext_password.egg-info/requires.txt
+django_plaintext_password.egg-info/top_level.txt
+plaintext_password/__init__.py
+plaintext_password/checks.py
+plaintext_password/py.typed

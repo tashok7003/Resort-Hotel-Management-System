@@ -1,0 +1,41 @@
+{% extends 'partials/dashboard_base.html' %}
+{% block dashboard_content %}
+<div class="dashboard-stats">
+    <h4>Staff Scheduling</h4>
+</div>
+
+<div class="dashboard-content-box">
+    <div class="card">
+        <div class="card-header">
+            <h5 class="mb-0">Staff Calendar</h5>
+        </div>
+        <div class="card-body p-4">
+            <div id="calendar"></div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    var calendarEl = document.getElementById('calendar');
+    var calendar = new FullCalendar.Calendar(calendarEl, {
+        initialView: 'dayGridMonth',
+        headerToolbar: {
+            left: 'prev,next today',
+            center: 'title',
+            right: 'dayGridMonth,timeGridWeek,timeGridDay'
+        },
+        events: [
+            {% for shift in shifts %}
+            {
+                title: '{{ shift.staff.user.get_full_name }}',
+                start: '{{ shift.start_time|date:"Y-m-d H:i" }}',
+                end: '{{ shift.end_time|date:"Y-m-d H:i" }}'
+            },
+            {% endfor %}
+        ]
+    });
+    calendar.render();
+});
+</script>
+{% endblock %} 

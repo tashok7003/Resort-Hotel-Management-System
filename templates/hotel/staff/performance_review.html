@@ -1,0 +1,119 @@
+{% extends 'partials/dashboard_base.html' %}
+{% load static %}
+
+{% block dashboard_content %}
+<div class="dashboard-content-box">
+    <div class="card">
+        <div class="card-header">
+            <h5 class="mb-0">Performance Review</h5>
+        </div>
+        <div class="card-body">
+            <!-- Review Details -->
+            <div class="row mb-4">
+                <div class="col-md-6">
+                    <h6>Review Information</h6>
+                    <table class="table">
+                        <tr>
+                            <th>Review Date</th>
+                            <td>{{ review.review_date }}</td>
+                        </tr>
+                        <tr>
+                            <th>Reviewer</th>
+                            <td>{{ review.reviewer.user.get_full_name }}</td>
+                        </tr>
+                        <tr>
+                            <th>Overall Rating</th>
+                            <td>
+                                <div class="stars">
+                                    {% for i in "12345"|make_list %}
+                                        <i class="fas fa-star {% if forloop.counter <= review.rating %}text-warning{% else %}text-muted{% endif %}"></i>
+                                    {% endfor %}
+                                </div>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th>Next Review</th>
+                            <td>{{ review.next_review_date }}</td>
+                        </tr>
+                    </table>
+                </div>
+                <div class="col-md-6">
+                    <h6>Performance Metrics</h6>
+                    <canvas id="performanceChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Comments and Goals -->
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-body">
+                            <h6>Comments</h6>
+                            <p>{{ review.comments|linebreaks }}</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-body">
+                            <h6>Goals Set</h6>
+                            <p>{{ review.goals_set|linebreaks }}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Action Items -->
+            {% if user.staffprofile.position == 'Manager' %}
+            <div class="mt-4">
+                <a href="{% url 'hotel:review_edit' review.pk %}" class="btn btn-primary">
+                    Edit Review
+                </a>
+                <a href="{% url 'hotel:review_create' review.staff.pk %}" class="btn btn-success">
+                    Schedule Next Review
+                </a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const ctx = document.getElementById('performanceChart').getContext('2d');
+    new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: ['Previous', 'Current'],
+            datasets: [{
+                label: 'Performance Rating',
+                data: [
+                    {{ previous_rating|default:0 }},
+                    {{ review.rating }}
+                ],
+                backgroundColor: [
+                    'rgba(54, 162, 235, 0.2)',
+                    'rgba(75, 192, 192, 0.2)'
+                ],
+                borderColor: [
+                    'rgb(54, 162, 235)',
+                    'rgb(75, 192, 192)'
+                ],
+                borderWidth: 1
+            }]
+        },
+        options: {
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    max: 5
+                }
+            }
+        }
+    });
+});
+</script>
+{% endblock %}
+{% endblock %} 

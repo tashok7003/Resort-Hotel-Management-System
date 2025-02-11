@@ -4,20 +4,57 @@ from django.template.loader import render_to_string
 from django.http import JsonResponse
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
+from django.db.models import Count, Sum, Avg, ExpressionWrapper, Case, When, FloatField, F
+from django.db.models.functions import TruncMonth
+from dateutil.relativedelta import relativedelta
+from django.utils import timezone
+from django.db.models import Q
 
-from hotel.models import Booking, Notification, Bookmark, Hotel, Review
+from hotel.models import Booking, Notification, Bookmark, Hotel, Room, Supplier, InventoryItem, PurchaseOrder, Shift
 from userauths.models import Profile, User
 from userauths.forms import ProfileUpdateForm, UserUpdateForm
 
 @login_required
 def dashboard(request):
     bookings = Booking.objects.filter(user=request.user, payment_status="paid")
+    print("Total bookings:", bookings.count())
+    
     total_spent = Booking.objects.filter(user=request.user, payment_status="paid").aggregate(amount=models.Sum('total'))
-
-    print("bookings ========", total_spent)
+    print("Total spent:", total_spent)
+    
+    monthly_bookings = Booking.objects.filter(user=request.user).annotate(
+        month=TruncMonth('date')
+    ).values('month').annotate(
+        count=Count('id'),
+        total=Sum('total')
+    ).order_by('month')
+    
+    package_stats = Booking.objects.values('room_type__type').annotate(
+        total_revenue=Sum('total'),
+        avg_occupancy=Avg('room_type__room_capacity'),
+        cancellation_rate=ExpressionWrapper(
+            Count(Case(When(payment_status='cancelled', then=1))) * 100.0 / Count('id'),
+            output_field=FloatField()
+        )
+    )
+    print("Package stats:", list(package_stats))
+    
+    payment_methods = Booking.objects.values('payment_status').annotate(
+        total=Sum('total'),
+        count=Count('id')
+    )
+    
     context = {
-        "bookings":bookings,
-        "total_spent":total_spent,
+        "bookings": bookings,
+        "total_spent": total_spent,
+        "monthly_bookings": list(monthly_bookings),
+        "package_stats": package_stats,
+        "payment_methods": list(payment_methods),
+        "age_distribution": Profile.objects.aggregate(
+            teens=Count(Case(When(birth_date__gte=timezone.now().date() - relativedelta(years=19), birth_date__lte=timezone.now().date() - relativedelta(years=13), then=1))),
+            adults=Count(Case(When(birth_date__gte=timezone.now().date() - relativedelta(years=40), birth_date__lte=timezone.now().date() - relativedelta(years=20), then=1))),
+            seniors=Count(Case(When(birth_date__lt=timezone.now().date() - relativedelta(years=40), then=1)))
+        )
     }
     return render(request, "user_dashboard/dashboard.html", context)
 
@@ -172,3 +209,58 @@ def add_review(request):
             review=review
         )
         return JsonResponse({"data":"Review Submitted, Thank You." , "icon":"success"})
+
+def analytics(request):
+    # Occupancy rates
+    total_rooms = Room.objects.count()
+    occupied = Booking.objects.filter(
+        check_in_date__lte=timezone.now(),
+        check_out_date__gte=timezone.now()
+    ).count()
+    occupancy_rate = (occupied / total_rooms) * 100 if total_rooms else 0
+    
+    # Financial reports
+    revenue = Booking.objects.filter(payment_status='paid').aggregate(
+        total=Sum('total'),
+        monthly=Sum('total', filter=Q(date__month=timezone.now().month)),
+        annual=Sum('total', filter=Q(date__year=timezone.now().year))
+    )
+    
+    context = {
+        'occupancy_rate': occupancy_rate,
+        'revenue': revenue,
+        # Add more metrics
+    }
+    return render(request, 'dashboard/analytics.html', context)
+
+@login_required
+def supplier_management(request):
+    suppliers = Supplier.objects.all()
+    context = {'suppliers': suppliers}
+    return render(request, 'dashboard/suppliers.html', context)
+
+@login_required
+def inventory_restock(request):
+    low_stock = InventoryItem.objects.filter(current_stock__lt=F('minimum_stock'))
+    recent_orders = PurchaseOrder.objects.order_by('-order_date')[:10]
+    context = {
+        'low_stock': low_stock,
+        'recent_orders': recent_orders
+    }
+    return render(request, 'dashboard/inventory_restock.html', context)
+
+@login_required
+def staff_schedule(request):
+    shifts = Shift.objects.filter(start_time__gte=timezone.now())
+    context = {'shifts': shifts}
+    return render(request, 'dashboard/staff_schedule.html', context)
+
+@login_required
+def group_bookings(request):
+    if request.method == 'POST':
+        group_size = request.POST.get('group_size')
+        discount = request.POST.get('discount')
+        # Save to database or session
+        messages.success(request, 'Group booking configuration updated')
+        return redirect('dashboard:group_bookings')
+    return render(request, 'dashboard/group_bookings.html')

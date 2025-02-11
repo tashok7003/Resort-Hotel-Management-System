@@ -65,6 +65,8 @@ INSTALLED_APPS = [
     'django_user_agents',
     'storages',
     'channels',
+    'django_filters',
+    'analytics',
 ]
 
 MIDDLEWARE = [
@@ -148,9 +150,11 @@ USE_TZ = True
 
 STATIC_URL = '/static/'
 
-STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+STATICFILES_DIRS = [
+    os.path.join(BASE_DIR, 'static')
+]
 
-STATICFILES_DIRS = [os.path.join(BASE_DIR, 'static')]
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 
 MEDIA_URL = '/media/'
 
@@ -196,26 +200,19 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 
 JAZZMIN_SETTINGS = {
-    # 'site_header': "Grailcavern",
+    'site_header': "Desphixs",
     'site_brand': "Your #1 marketplace for collectibles.",
-    'site_logo': "assets/imgs/logo.png",
+    'site_logo': "/images/logo.png",
     'copyright':  "All Right Reserved 2023",
-    # "order_with_respect_to": ["store", 'vendor', "addons" , 'core' ,'userauths'],
-    "welcome_sign": "Welcome to GrailCavern, Login Now.",
+    "welcome_sign": "Welcome to Desphixs, Login Now.",
     "topmenu_links": [
 
         {"name": "Home",  "url": "admin:index", "permissions": ["auth.view_user"]},
         {"name": "Company", "url": "/admin/addons/company/"},
         {"name": "Users", "url": "/admin/userauths/user/"},
 
-        # model admin to link to (Permissions checked against model)
         {"model": "AUTH_USER_MODEL.User"},
-
-        # App with dropdown menu to all its models pages (Permissions checked against models)
-        {"store": "Product"},
     ],
-
-    # "order_with_respect_to": ["store", "store.Product"],
 
     "order_with_respect_to": [
         "hotel",

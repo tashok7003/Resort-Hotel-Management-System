@@ -1,0 +1,67 @@
+{% extends 'partials/dashboard_base.html' %}
+{% load static %}
+
+{% block dashboard_content %}
+<div class="dashboard-content-box">
+    <div class="card">
+        <div class="card-header">
+            <h5 class="mb-0">{% if form.instance.pk %}Edit{% else %}Add New{% endif %} Performance Metric</h5>
+        </div>
+        <div class="card-body">
+            <form method="post">
+                {% csrf_token %}
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label class="form-label">Metric Type</label>
+                            {{ form.metric_type }}
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Value (1-5)</label>
+                            {{ form.value }}
+                            <div class="form-text">Rate performance from 1 (poor) to 5 (excellent)</div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Date</label>
+                            {{ form.date }}
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Notes</label>
+                            {{ form.notes }}
+                        </div>
+                        <div class="text-end">
+                            <a href="{% url 'hotel:performance_metrics' %}" class="btn btn-secondary">Cancel</a>
+                            <button type="submit" class="btn btn-primary">Save Metric</button>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card bg-light">
+                            <div class="card-body">
+                                <h6>Metric Guidelines</h6>
+                                <ul class="list-unstyled mb-0">
+                                    <li class="mb-2">
+                                        <strong>Attendance Rate:</strong>
+                                        <p class="small mb-0">Measure of punctuality and attendance reliability</p>
+                                    </li>
+                                    <li class="mb-2">
+                                        <strong>Task Completion:</strong>
+                                        <p class="small mb-0">Rate of completing assigned tasks on time</p>
+                                    </li>
+                                    <li class="mb-2">
+                                        <strong>Customer Rating:</strong>
+                                        <p class="small mb-0">Average feedback from customer interactions</p>
+                                    </li>
+                                    <li>
+                                        <strong>Efficiency Score:</strong>
+                                        <p class="small mb-0">Overall work efficiency and productivity</p>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %} 

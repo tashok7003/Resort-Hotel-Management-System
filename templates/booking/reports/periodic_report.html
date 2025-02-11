@@ -1,0 +1,143 @@
+{% extends 'partials/dashboard_base.html' %}
+{% load static %}
+
+{% block dashboard_content %}
+<div class="dashboard-content-box">
+    <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">Group Bookings Report: {{ report.period.start_date|date }} - {{ report.period.end_date|date }}</h5>
+            <div>
+                <button class="btn btn-primary" onclick="window.print()">
+                    <i class="fas fa-print"></i> Print Report
+                </button>
+            </div>
+        </div>
+        <div class="card-body">
+            <!-- Summary Statistics -->
+            <div class="row mb-4">
+                <div class="col-md-4">
+                    <div class="card bg-light">
+                        <div class="card-body text-center">
+                            <h6>Total Bookings</h6>
+                            <h3>{{ report.summary.total_bookings }}</h3>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card bg-light">
+                        <div class="card-body text-center">
+                            <h6>Total Revenue</h6>
+                            <h3>${{ report.summary.total_revenue }}</h3>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card bg-light">
+                        <div class="card-body text-center">
+                            <h6>Average Group Size</h6>
+                            <h3>{{ report.summary.average_group_size|floatformat:1 }}</h3>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Booking Types -->
+            <h6>Booking Types Distribution</h6>
+            <div class="row mb-4">
+                <div class="col-md-8">
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Group Type</th>
+                                    <th>Number of Bookings</th>
+                                    <th>Total Revenue</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for type in report.booking_types %}
+                                <tr>
+                                    <td>{{ type.group_type }}</td>
+                                    <td>{{ type.count }}</td>
+                                    <td>${{ type.revenue }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <canvas id="bookingTypesChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Occupancy Data -->
+            <h6>Room Occupancy</h6>
+            <div class="row">
+                <div class="col-md-8">
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Room Type</th>
+                                    <th>Total Nights Booked</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for data in report.occupancy_data %}
+                                <tr>
+                                    <td>{{ data.room__room_type__type }}</td>
+                                    <td>{{ data.total_nights }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <canvas id="occupancyChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+// Booking Types Chart
+const bookingTypesCtx = document.getElementById('bookingTypesChart').getContext('2d');
+new Chart(bookingTypesCtx, {
+    type: 'pie',
+    data: {
+        labels: [{% for type in report.booking_types %}'{{ type.group_type }}',{% endfor %}],
+        datasets: [{
+            data: [{% for type in report.booking_types %}{{ type.count }},{% endfor %}],
+            backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0']
+        }]
+    }
+});
+
+// Occupancy Chart
+const occupancyCtx = document.getElementById('occupancyChart').getContext('2d');
+new Chart(occupancyCtx, {
+    type: 'bar',
+    data: {
+        labels: [{% for data in report.occupancy_data %}'{{ data.room__room_type__type }}',{% endfor %}],
+        datasets: [{
+            label: 'Nights Booked',
+            data: [{% for data in report.occupancy_data %}{{ data.total_nights }},{% endfor %}],
+            backgroundColor: '#36A2EB'
+        }]
+    },
+    options: {
+        scales: {
+            y: {
+                beginAtZero: true
+            }
+        }
+    }
+});
+</script>
+{% endblock %}
+{% endblock %} 

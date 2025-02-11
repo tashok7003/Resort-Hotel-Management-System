@@ -1,0 +1,162 @@
+{% extends 'partials/dashboard_base.html' %}
+{% load static %}
+
+{% block dashboard_content %}
+<div class="dashboard-content-box">
+    <div class="card">
+        <div class="card-header">
+            <h5 class="mb-0">Widget Settings: {{ widget.name }}</h5>
+        </div>
+        <div class="card-body">
+            <form method="post">
+                {% csrf_token %}
+                <div class="row">
+                    <div class="col-md-8">
+                        <!-- Basic Settings -->
+                        <div class="mb-3">
+                            <label class="form-label">Widget Name</label>
+                            {{ form.name }}
+                            {% if form.name.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.name.errors }}
+                            </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Widget Type</label>
+                            {{ form.widget_type }}
+                            {% if form.widget_type.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.widget_type.errors }}
+                            </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Position</label>
+                            {{ form.position }}
+                            {% if form.position.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.position.errors }}
+                            </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="mb-3">
+                            <div class="form-check">
+                                {{ form.is_visible }}
+                                <label class="form-check-label">
+                                    Show on Dashboard
+                                </label>
+                            </div>
+                            {% if form.is_visible.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.is_visible.errors }}
+                            </div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Advanced Settings -->
+                        <div class="mb-3">
+                            <label class="form-label">Widget Settings (JSON)</label>
+                            {{ form.settings }}
+                            <div class="form-text">Configure advanced widget settings in JSON format</div>
+                            {% if form.settings.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.settings.errors }}
+                            </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="text-end">
+                            <a href="{% url 'analytics:dashboard' %}" class="btn btn-secondary">Cancel</a>
+                            <button type="submit" class="btn btn-primary">Save Changes</button>
+                        </div>
+                    </div>
+
+                    <div class="col-md-4">
+                        <!-- Help Section -->
+                        <div class="card bg-light">
+                            <div class="card-body">
+                                <h6>Widget Type Guide</h6>
+                                <ul class="list-unstyled mb-0">
+                                    <li class="mb-3">
+                                        <strong>Revenue Chart</strong>
+                                        <p class="small mb-0">Shows revenue trends over time with daily breakdowns.</p>
+                                    </li>
+                                    <li class="mb-3">
+                                        <strong>Occupancy Chart</strong>
+                                        <p class="small mb-0">Displays room occupancy rates and patterns.</p>
+                                    </li>
+                                    <li class="mb-3">
+                                        <strong>Performance Metrics</strong>
+                                        <p class="small mb-0">Key performance indicators and statistics.</p>
+                                    </li>
+                                    <li>
+                                        <strong>Booking Trends</strong>
+                                        <p class="small mb-0">Visualizes booking patterns and trends.</p>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+
+                        <!-- Settings Examples -->
+                        <div class="card bg-light mt-3">
+                            <div class="card-body">
+                                <h6>Settings Examples</h6>
+                                <pre class="small mb-0"><code>{
+  "chart_type": "line",
+  "time_range": "30d",
+  "show_legend": true,
+  "colors": ["#007bff", "#28a745"]
+}</code></pre>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Format JSON input on load
+    const settingsInput = document.querySelector('#id_settings');
+    try {
+        const formattedJson = JSON.stringify(JSON.parse(settingsInput.value), null, 2);
+        settingsInput.value = formattedJson;
+    } catch (e) {
+        console.warn('Invalid JSON in settings');
+    }
+
+    // Update available settings based on widget type
+    document.querySelector('#id_widget_type').addEventListener('change', function(e) {
+        const widgetType = e.target.value;
+        let defaultSettings = {};
+        
+        switch(widgetType) {
+            case 'REVENUE_CHART':
+                defaultSettings = {
+                    chart_type: 'line',
+                    time_range: '30d',
+                    show_legend: true
+                };
+                break;
+            case 'OCCUPANCY_CHART':
+                defaultSettings = {
+                    chart_type: 'bar',
+                    show_percentage: true
+                };
+                break;
+            // Add other widget types...
+        }
+        
+        settingsInput.value = JSON.stringify(defaultSettings, null, 2);
+    });
+});
+</script>
+{% endblock %}
+{% endblock %} 

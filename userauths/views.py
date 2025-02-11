@@ -17,11 +17,20 @@ def RegisterView(request, *args, **kwargs):
 
     form = UserRegisterForm(request.POST or None)
     if form.is_valid():
-        form.save()
+        user = form.save(commit=False)
+        password = form.cleaned_data.get('password')
+        user.set_password(password)
+        user.save()
+        
+        # Create profile with birth date
+        Profile.objects.create(
+            user=user,
+            birth_date=form.cleaned_data.get('birth_date')
+        )
+        
         full_name = form.cleaned_data.get('full_name')
         phone = form.cleaned_data.get('phone')
         email = form.cleaned_data.get('email')
-        password = form.cleaned_data.get('password1')
 
         user = authenticate(email=email, password=password)
         login(request, user)

@@ -1,0 +1,173 @@
+{% extends 'partials/dashboard_base.html' %}
+{% load static %}
+
+{% block dashboard_content %}
+<div class="dashboard-content-box">
+    <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">Group Booking: {{ booking.group_name }}</h5>
+            <div>
+                <span class="badge {% if booking.booking.is_active %}bg-success{% else %}bg-danger{% endif %}">
+                    {{ booking.booking.get_status_display }}
+                </span>
+            </div>
+        </div>
+        <div class="card-body">
+            <!-- Booking Details -->
+            <div class="row mb-4">
+                <div class="col-md-6">
+                    <h6>Group Details</h6>
+                    <table class="table">
+                        <tr>
+                            <th>Group Name</th>
+                            <td>{{ booking.group_name }}</td>
+                        </tr>
+                        <tr>
+                            <th>Group Type</th>
+                            <td>{{ booking.get_group_type_display }}</td>
+                        </tr>
+                        <tr>
+                            <th>Group Size</th>
+                            <td>{{ booking.group_size }}</td>
+                        </tr>
+                        <tr>
+                            <th>Group Leader</th>
+                            <td>{{ booking.group_leader.get_full_name }}</td>
+                        </tr>
+                    </table>
+                </div>
+                <div class="col-md-6">
+                    <h6>Booking Information</h6>
+                    <table class="table">
+                        <tr>
+                            <th>Check-in Date</th>
+                            <td>{{ booking.booking.check_in_date }}</td>
+                        </tr>
+                        <tr>
+                            <th>Check-out Date</th>
+                            <td>{{ booking.booking.check_out_date }}</td>
+                        </tr>
+                        <tr>
+                            <th>Total Amount</th>
+                            <td>${{ booking.booking.total }}</td>
+                        </tr>
+                        <tr>
+                            <th>Discount Applied</th>
+                            <td>{{ booking.discount_applied }}%</td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Special Requests -->
+            {% if booking.special_requests %}
+            <div class="mb-4">
+                <h6>Special Requests</h6>
+                <div class="alert alert-info">
+                    {{ booking.special_requests }}
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Group Members -->
+            <h6>Group Members</h6>
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Contact</th>
+                            <th>Room Preference</th>
+                            <th>Special Requirements</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for member in members %}
+                        <tr>
+                            <td>{{ member.name }}</td>
+                            <td>
+                                {{ member.email }}<br>
+                                {{ member.phone }}
+                            </td>
+                            <td>{{ member.room_preference.type }}</td>
+                            <td>{{ member.special_requirements|default:"-" }}</td>
+                            <td>
+                                <span class="badge {% if member.is_checked_in %}bg-success{% else %}bg-warning{% endif %}">
+                                    {% if member.is_checked_in %}Checked In{% else %}Pending{% endif %}
+                                </span>
+                            </td>
+                            <td>
+                                {% if not member.is_checked_in %}
+                                <button class="btn btn-sm btn-primary check-in-btn" 
+                                        data-member-id="{{ member.id }}">
+                                    Check In
+                                </button>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Actions -->
+            <div class="mt-4 text-end">
+                {% if booking.booking.is_active %}
+                <button class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#cancelModal">
+                    Cancel Booking
+                </button>
+                {% endif %}
+                <a href="{% url 'booking:group_booking_edit' booking.id %}" class="btn btn-primary">
+                    Edit Booking
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Cancel Modal -->
+<div class="modal fade" id="cancelModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Cancel Group Booking</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to cancel this group booking?</p>
+                <p class="text-danger">This action cannot be undone.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <form method="post" action="{% url 'booking:group_booking_cancel' booking.id %}">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger">Cancel Booking</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    // Handle member check-in
+    $('.check-in-btn').click(function() {
+        const memberId = $(this).data('member-id');
+        $.post('{% url "booking:group_member_checkin" %}', {
+            member_id: memberId,
+            csrfmiddlewaretoken: '{{ csrf_token }}'
+        })
+        .done(function(response) {
+            location.reload();
+        })
+        .fail(function(xhr) {
+            alert('Check-in failed. Please try again.');
+        });
+    });
+});
+</script>
+{% endblock %}
+{% endblock %} 

@@ -1,0 +1,159 @@
+{% extends 'partials/dashboard_base.html' %}
+{% load static %}
+
+{% block dashboard_content %}
+<div class="dashboard-content-box">
+    <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">Room Service Dashboard</h5>
+            <a href="{% url 'hotel:create_service_request' %}" class="btn btn-primary">
+                <i class="fas fa-plus"></i> New Request
+            </a>
+        </div>
+        <div class="card-body">
+            <!-- Service Request Summary -->
+            <div class="row mb-4">
+                <div class="col-md-4">
+                    <div class="card bg-warning text-white">
+                        <div class="card-body">
+                            <h6>Pending Requests</h6>
+                            <h3>{{ pending_requests.count }}</h3>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card bg-info text-white">
+                        <div class="card-body">
+                            <h6>In Progress</h6>
+                            <h3>{{ in_progress.count }}</h3>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card bg-success text-white">
+                        <div class="card-body">
+                            <h6>My Tasks</h6>
+                            <h3>{{ my_tasks.count }}</h3>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Active Requests -->
+            <div class="mb-4">
+                <h6>Active Requests</h6>
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Room</th>
+                                <th>Service Type</th>
+                                <th>Priority</th>
+                                <th>Status</th>
+                                <th>Assigned To</th>
+                                <th>Time</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for request in pending_requests|add:in_progress %}
+                            <tr>
+                                <td>{{ request.room_number }}</td>
+                                <td>{{ request.get_service_type_display }}</td>
+                                <td>
+                                    <span class="badge {% if request.priority == 'URGENT' %}bg-danger
+                                                      {% elif request.priority == 'HIGH' %}bg-warning
+                                                      {% else %}bg-info{% endif %}">
+                                        {{ request.get_priority_display }}
+                                    </span>
+                                </td>
+                                <td>{{ request.get_status_display }}</td>
+                                <td>
+                                    {% if request.assigned_to %}
+                                        {{ request.assigned_to.user.get_full_name }}
+                                    {% else %}
+                                        <span class="text-muted">Unassigned</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ request.requested_at|timesince }} ago</td>
+                                <td>
+                                    <a href="{% url 'hotel:service_request_detail' request.pk %}" 
+                                       class="btn btn-sm btn-info">View</a>
+                                    {% if not request.assigned_to %}
+                                        <a href="{% url 'hotel:assign_service_request' request.pk %}" 
+                                           class="btn btn-sm btn-primary">Assign</a>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- My Tasks -->
+            {% if my_tasks %}
+            <div>
+                <h6>My Assigned Tasks</h6>
+                <div class="table-responsive">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Room</th>
+                                <th>Service</th>
+                                <th>Status</th>
+                                <th>Estimated Duration</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for task in my_tasks %}
+                            <tr>
+                                <td>{{ task.room_number }}</td>
+                                <td>{{ task.get_service_type_display }}</td>
+                                <td>{{ task.get_status_display }}</td>
+                                <td>
+                                    {% if task.estimated_duration %}
+                                        {{ task.estimated_duration }}
+                                    {% else %}
+                                        <span class="text-muted">Not set</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <a href="{% url 'hotel:service_request_detail' task.pk %}" 
+                                       class="btn btn-sm btn-primary">Update</a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+{% block extra_js %}
+<script>
+// Real-time updates using AJAX
+function updateServiceStatus() {
+    const serviceRows = document.querySelectorAll('[data-service-id]');
+    serviceRows.forEach(row => {
+        const serviceId = row.dataset.serviceId;
+        fetch(`{% url 'hotel:get_service_status' 0 %}`.replace('0', serviceId))
+            .then(response => response.json())
+            .then(data => {
+                row.querySelector('.status').textContent = data.status;
+                if (data.assigned_to) {
+                    row.querySelector('.assigned-to').textContent = data.assigned_to;
+                }
+            });
+    });
+}
+
+// Update every 30 seconds
+setInterval(updateServiceStatus, 30000);
+</script>
+{% endblock %}
+{% endblock %} 

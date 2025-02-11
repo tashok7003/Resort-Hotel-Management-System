@@ -28,4 +28,8 @@ urlpatterns = [
     path("add_to_bookmark/", views.add_to_bookmark, name="add_to_bookmark"),
     path("add_review/", views.add_review, name="add_review"),
 
+    path('suppliers/', views.supplier_management, name='suppliers'),
+    path('inventory/', views.inventory_restock, name='inventory'),
+    path('staff-schedule/', views.staff_schedule, name='staff_schedule'),
+    path('group-bookings/', views.group_bookings, name='group_bookings'),
 ]

@@ -1,0 +1,46 @@
+<div class="performance-metrics">
+    <div class="row">
+        <div class="col-6 mb-3">
+            <div class="metric-item">
+                <h6>Average Stay Length</h6>
+                <h3>{{ widget.data.average_stay_length|floatformat:1 }} days</h3>
+            </div>
+        </div>
+        <div class="col-6 mb-3">
+            <div class="metric-item">
+                <h6>Cancellation Rate</h6>
+                <h3>{{ widget.data.cancellation_rate|floatformat:1 }}%</h3>
+            </div>
+        </div>
+    </div>
+    
+    <h6>Room Type Performance</h6>
+    <div class="table-responsive">
+        <table class="table table-sm">
+            <thead>
+                <tr>
+                    <th>Type</th>
+                    <th>Bookings</th>
+                    <th>Rating</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in widget.data.room_type_popularity %}
+                <tr>
+                    <td>{{ item.type }}</td>
+                    <td>{{ item.booking_count }}</td>
+                    <td>
+                        <div class="stars">
+                            {% with ''|center:item.avg_rating as range %}
+                            {% for _ in range %}
+                            <i class="fas fa-star text-warning"></i>
+                            {% endfor %}
+                            {% endwith %}
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div> 

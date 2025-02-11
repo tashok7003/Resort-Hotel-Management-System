@@ -1,16 +1,124 @@
-
 {% extends 'partials/dashboard_base.html' %}
 {% load static %}
+<style>
+    /* Responsive Dashboard Styles */
+    #wrapper, #dashboard {
+        padding-top: 0 !important;
+        margin-top: 0 !important;
+    }
+    
+    .dashboard-sidebar {
+        position: relative !important;
+        height: auto !important;
+        overflow: visible !important;
+    }
+
+    #dashboard {
+        display: flex;
+        min-height: 100vh;
+    }
+
+    .utf_dashboard_content {
+        flex: 1;
+        padding: 15px;
+        width: 100%;
+        margin-top: 0;
+    }
+
+    .utf_dashboard_stat {
+        padding: 20px;
+        margin-bottom: 20px;
+        border-radius: 8px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+
+    .analytics-card {
+        background: #fff;
+        padding: 20px;
+        border-radius: 8px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        margin-bottom: 20px;
+        height: 100%;
+    }
+
+    /* Mobile Responsive */
+    @media (max-width: 768px) {
+        #wrapper {
+            padding: 0 !important;
+        }
+        
+        #dashboard {
+            flex-direction: column;
+        }
+        
+        .utf_dashboard_navigation {
+            width: 100%;
+            margin-bottom: 15px;
+        }
+
+        .utf_dashboard_content {
+            padding: 10px;
+            margin-top: 0;
+        }
+        
+        .utf_dashboard_nav_responsive {
+            position: fixed;
+            top: 0;
+            left: 0;
+            z-index: 1000;
+        }
+
+        .utf_dashboard_stat {
+            margin-bottom: 15px;
+        }
+
+        .table-responsive {
+            margin-bottom: 15px;
+            overflow-x: auto;
+        }
+
+        .analytics-card {
+            padding: 15px;
+        }
+
+        .row > [class*='col-'] {
+            padding-left: 10px;
+            padding-right: 10px;
+        }
+    }
+
+    /* Tablet Responsive */
+    @media (min-width: 769px) and (max-width: 1024px) {
+        .utf_dashboard_content {
+            padding: 15px;
+        }
+    }
+
+    /* Ensure charts are responsive */
+    canvas {
+        max-width: 100%;
+        height: auto !important;
+    }
+
+    /* Fix sidebar scroll */
+    .utf_dashboard_navigation {
+        position: relative !important;
+        width: 260px;
+        background: #2a2a2a;
+        overflow: visible !important;
+        height: auto !important;
+    }
+</style>
 {% block content %}
 
     <!-- Dashboard -->
-    <div id="dashboard">
+    <div id="dashboard" class="container-fluid" style="margin-top: 0 !important;">
         <a href="#" class="utf_dashboard_nav_responsive"><i class="fa fa-reorder"></i> Dashboard Sidebar Menu</a>
         {% include 'partials/dashboard_sidebar.html' %}
         <div class="utf_dashboard_content">
             
             <div class="row">
-                <div class="col-lg-4 col-md-12 col-sm-12">
+                <div class="col-lg-4 col-md-6 col-sm-12">
                     <div class="utf_dashboard_stat color-1">
                         <div class="utf_dashboard_stat_content">
                             <h4>{{bookings.count}}</h4>
@@ -20,7 +128,7 @@
                     </div>
                 </div>
 
-                <div class="col-lg-4 col-md-12 col-sm-12">
+                <div class="col-lg-4 col-md-6 col-sm-12">
                     <div class="utf_dashboard_stat color-2">
                         <div class="utf_dashboard_stat_content">
                             <h4>${{total_spent.amount|floatformat:2}}</h4>
@@ -30,7 +138,7 @@
                     </div>
                 </div>
 
-                <div class="col-lg-4 col-md-12 col-sm-12">
+                <div class="col-lg-4 col-md-6 col-sm-12">
                     <div class="utf_dashboard_stat color-3">
                         <div class="utf_dashboard_stat_content">
                             <h4>${{request.user.profile.wallet|floatformat:2}}</h4>
@@ -61,7 +169,7 @@
                                     
                                     {% for b in bookings %}
                                         <tr>
-                                            <td>1</td>
+                                            <td>{{ forloop.counter }}</td>
                                             <td>{{ b.hotel.name }}</td>
                                             <td>{{ b.room.all.count }}</td>
                                             <td>{{b.date}}</td>
@@ -90,6 +198,60 @@
                                 </li>
                             {% endfor %}
                         </ul>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-lg-6 col-md-12">
+                    <div class="analytics-card mb-4">
+                        <h5><i class="fas fa-chart-line"></i> Booking Trends</h5>
+                        <div class="chart-container" style="position: relative; height: 300px;">
+                            <canvas id="bookingTrendsChart" 
+                                    data-months="{% for m in monthly_bookings %}'{{ m.month|date:"M Y" }}'{% if not forloop.last %},{% endif %}{% endfor %}"
+                                    data-counts="{% for m in monthly_bookings %}{{ m.count }}{% if not forloop.last %},{% endif %}{% endfor %}"></canvas>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-6">
+                    <div class="analytics-card mb-4">
+                        <h5><i class="fas fa-box-open"></i> Package Performance</h5>
+                        <table class="table table-hover">
+                            <thead class="thead-light">
+                                <tr>
+                                    <th>Package</th>
+                                    <th>Revenue</th>
+                                    <th>Cancellation Rate</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for stat in package_stats %}
+                                <tr>
+                                    <td>{{ stat.room_type__type }}</td>
+                                    <td>${{ stat.total_revenue|floatformat:2 }}</td>
+                                    <td>
+                                        <div class="progress">
+                                            <div class="progress-bar bg-{% if stat.cancellation_rate > 15 %}danger{% else %}success{% endif %}" 
+                                                style="width: {{ stat.cancellation_rate }}%">
+                                                {{ stat.cancellation_rate|floatformat:1 }}%
+                                            </div>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="analytics-card mb-4">
+                        <h5><i class="fas fa-money-bill-wave"></i> Payment Methods</h5>
+                        <canvas id="paymentMethodsChart"
+                                data-labels="{% for m in payment_methods %}'{{ m.payment_status }}'{% if not forloop.last %},{% endif %}{% endfor %}"
+                                data-data="{% for m in payment_methods %}{{ m.total }}{% if not forloop.last %},{% endif %}{% endfor %}"></canvas>
                     </div>
                 </div>
             </div>

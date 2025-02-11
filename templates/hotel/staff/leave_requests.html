@@ -1,0 +1,70 @@
+{% extends 'partials/dashboard_base.html' %}
+{% load static %}
+
+{% block dashboard_content %}
+<div class="dashboard-content-box">
+    <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">Leave Requests</h5>
+            <a href="{% url 'hotel:leave_request_create' %}" class="btn btn-primary">
+                <i class="fas fa-plus"></i> New Request
+            </a>
+        </div>
+        <div class="card-body">
+            <!-- Leave Balance -->
+            <div class="row mb-4">
+                {% for leave_type, balance in leave_balance.items %}
+                <div class="col-md-3">
+                    <div class="card bg-light">
+                        <div class="card-body">
+                            <h6>{{ leave_type.name }}</h6>
+                            <h3>{{ balance }} days</h3>
+                            <small>remaining</small>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+
+            <!-- Leave Requests Table -->
+            <div class="table-responsive">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Type</th>
+                            <th>From</th>
+                            <th>To</th>
+                            <th>Days</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for request in leave_requests %}
+                        <tr>
+                            <td>{{ request.leave_type.name }}</td>
+                            <td>{{ request.start_date }}</td>
+                            <td>{{ request.end_date }}</td>
+                            <td>{{ request.end_date|timeuntil:request.start_date }}</td>
+                            <td>
+                                <span class="badge {% if request.status == 'APPROVED' %}bg-success
+                                                  {% elif request.status == 'REJECTED' %}bg-danger
+                                                  {% else %}bg-warning{% endif %}">
+                                    {{ request.status }}
+                                </span>
+                            </td>
+                            <td>
+                                {% if request.status == 'PENDING' and user.staffprofile.position == 'Manager' %}
+                                <a href="{% url 'hotel:approve_leave_request' request.pk %}" 
+                                   class="btn btn-sm btn-success">Approve</a>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

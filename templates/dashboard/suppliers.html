@@ -1,0 +1,39 @@
+{% extends 'partials/dashboard_base.html' %}
+{% block dashboard_content %}
+<div class="dashboard-stats">
+    <h4>Supplier Management</h4>
+    <!-- Stats cards row if needed -->
+</div>
+
+<div class="dashboard-content-box">
+    <div class="card">
+        <div class="card-header">
+            <h5 class="mb-0">All Suppliers</h5>
+        </div>
+        <div class="card-body p-4">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Contact</th>
+                            <th>Lead Time</th>
+                            <th>Rating</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for supplier in suppliers %}
+                        <tr>
+                            <td>{{ supplier.name }}</td>
+                            <td>{{ supplier.contact_name }}</td>
+                            <td>{{ supplier.lead_time }} days</td>
+                            <td>{{ supplier.rating }}/5</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,4 +1,3 @@
-
 {% extends 'partials/dashboard_base.html' %}
 {% load static %}
 {% block content %}
@@ -51,6 +50,46 @@
                         </ul>
                     </div>
                 </div>
+            </div>
+            <div class="financial-insights">
+              <div class="row">
+                <div class="col-md-6">
+                  <div class="finance-card card mb-4">
+                    <div class="card-body">
+                      <h5 class="card-title"><i class="fas fa-money-check-alt"></i> Spending Breakdown</h5>
+                      <canvas id="spendingCategoryChart"
+                              data-labels="['Rooms', 'Dining', 'Amenities', 'Packages']"
+                              data-data="[
+                                {{ category_spending.rooms|default:0 }},
+                                {{ category_spending.dining|default:0 }},
+                                {{ category_spending.amenities|default:0 }},
+                                {{ category_spending.packages|default:0 }}
+                              ]"></canvas>
+                    </div>
+                  </div>
+                </div>
+                
+                <div class="col-md-6">
+                  <div class="finance-card card mb-4">
+                    <div class="card-body">
+                      <h5 class="card-title"><i class="fas fa-coins"></i> Reward Points</h5>
+                      <div class="reward-progress">
+                        <div class="d-flex justify-content-between mb-2">
+                          <span>Current Tier: {{ reward_tier }}</span>
+                          <span>Next Tier: {{ next_tier }} ({{ points_to_next_tier }} points)</span>
+                        </div>
+                        <div class="progress">
+                          <div class="progress-bar bg-warning" 
+                               style="width: {{ reward_progress }}%"
+                               role="progressbar">
+                            {{ request.user.profile.reward_points }} Points
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
         </div>
     </div>

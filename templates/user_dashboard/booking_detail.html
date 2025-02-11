@@ -1,4 +1,3 @@
-
 {% extends 'partials/dashboard_base.html' %}
 {% load static %}
 {% block content %}
@@ -154,6 +153,41 @@
                     </div>		  
                   </div>
               </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <h5>Booking Details #{{ booking.id }}</h5>
+        </div>
+        <div class="card-body">
+            <!-- Add new fields -->
+            <div class="row">
+                <div class="col-md-4">
+                    <p><strong>Status:</strong> {{ booking.get_status_display }}</p>
+                    {% if booking.package %}
+                    <p><strong>Package:</strong> {{ booking.package.name }}</p>
+                    {% endif %}
+                </div>
+                <div class="col-md-4">
+                    <p><strong>Cancellation Policy:</strong> {{ booking.cancellation_policy.name }}</p>
+                    <p><strong>Cancellation Fee:</strong> ${{ booking.cancellation_fee }}</p>
+                </div>
+                <div class="col-md-4">
+                    {% if booking.waitlist_position %}
+                    <p class="text-info"><strong>Waitlist Position:</strong> {{ booking.waitlist_position }}</p>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <!-- Add cancellation button -->
+            <div class="mt-4">
+                <a href="{% url 'booking:cancel_booking' booking.id %}" 
+                   class="btn btn-danger"
+                   onclick="return confirm('Are you sure you want to cancel this booking?')">
+                    Cancel Booking
+                </a>
+            </div>
         </div>
     </div>
 {% endblock content %}
