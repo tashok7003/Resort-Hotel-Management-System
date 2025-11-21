@@ -2,8 +2,6 @@
 
 # 🏝️ Resort Hotel Management System
 
-![badges](/mnt/data/69c9c8da-a67b-4cec-97b1-5e5a02a0a1c6.png)
-
 <!-- Badge row -->
 
 [![Python](https://img.shields.io/badge/Python-3.8%2B-blue)](https://www.python.org/)
