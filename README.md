@@ -195,5 +195,3 @@ For help, raise an issue or contact: **[ashokdevamani7003@gmail.com](mailto:asho
 `Django` `Hotel-Management` `Booking` `Analytics` `Room-Service` `Inventory` `Staff-Management` `Docker` `PostgreSQL` `CI` `PDF-Export`
 
 ---
-
-Which of these would you like next?
